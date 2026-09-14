@@ -48,16 +48,25 @@ Mówisz normalnie, po polsku — aplikacja sama wyciąga termin, godzinę i kate
 | „trening codziennie o 7" | powtarza się co dzień |
 | „napisz maila do galerii na 30 minut" | z blokiem 30 minut na fokus |
 | „kup mleko" | bez terminu → skrzynka |
+| „spotkanie o wpół do trzeciej" | 14:30 |
+| „zadzwoń o piętnastej" | 15:00 |
+| „wizyta o dziewiątej trzydzieści" | 9:30 |
+| „za dwadzieścia minut wyjść" | za 20 minut |
 
 Rozumie też: dziś / jutro / pojutrze / pojedyncze dni tygodnia / „w przyszły wtorek" /
 „w weekend" / „za 2 godziny" / „za tydzień" / daty (3 października, 20.09) /
 pory dnia (rano, po południu, wieczorem, w nocy).
 
+Godziny rozumie też **słowami**, bo dyktowanie często tak je zapisuje:
+„o dwunastej", „o piętnastej", „o wpół do trzeciej", „o dwudziestej pierwszej",
+„za dwadzieścia minut", „na czterdzieści pięć minut". Przy godzinach 1–7
+zakłada popołudnie („o trzeciej" = 15:00), chyba że padnie „rano".
+
 ### Trzy zakładki
 
 - **Teraz** — jedno zadanie. To, które ma sens zrobić w tej chwili (po terminie > pilne > najbliższa godzina > szybkie). Plus timer fokusa.
 - **Dziś** — zaległe, dzisiejsze i skrzynka (rzeczy bez terminu, do rozdzielenia).
-- **Wszystko** — nadchodzące i historia.
+- **Kalendarz** — miesiąc jak w iPhonie: kropki pod dniami z zadaniami (pomarańczowa = pilne), dotknięcie dnia pokazuje jego listę pod spodem.
 
 ### Przyciski przy zadaniu
 
@@ -75,6 +84,9 @@ pory dnia (rano, po południu, wieczorem, w nocy).
 - **Licznik „zrobione dziś"** — natychmiastowa nagroda, widoczna od razu po `✓`.
 - **Timer fokusa** — start jednym kliknięciem, z tytułem zadania na ekranie, żeby nie odpłynąć.
 - **Skrzynka** — rzeczy bez terminu nie znikają i nie zaśmiecają dnia.
+- **Godzina w osobnej kolumnie** — duża, wyrównana, z kreską oddzielającą. Wzrok łapie ją od razu, bez czytania zdania.
+- **Kolorowy pasek z lewej karty** — zielony = zaraz, pomarańczowy = pilne, czerwony = po terminie. Rozpoznajesz stan bez czytania.
+- **Poprawianie tekstu dotknięciem** — dyktowanie przekręci imię, poprawiasz w miejscu, termin zostaje.
 
 ## iPhone
 

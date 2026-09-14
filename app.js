@@ -190,18 +190,37 @@ function coTeraz(){
 
 /* ---------------- render ---------------- */
 function kartaHTML(z){
-  const data = ludzkaData(z);
   const bliskoTxt = zaIle(z);
   const klasy = ['zad'];
   if (z.zrobione) klasy.push('zrobione');
   if (z.pilne) klasy.push('pilne');
-  if (bliskoTxt && !bliskoTxt.spoznione) klasy.push('terazTermin');
+  if (bliskoTxt && bliskoTxt.spoznione) klasy.push('poTerminie');
+  else if (bliskoTxt) klasy.push('zaraz');
+
+  // godzina jako osobna, mocna kolumna — najlatwiej zlapac wzrokiem
+  let czas;
+  if (z.kiedy && z.maGodzine){
+    const d = new Date(z.kiedy);
+    czas = '<div class="czas"><b>' + d.toLocaleTimeString('pl-PL',{hour:'2-digit',minute:'2-digit'}) + '</b>' +
+           (z.trwanie ? '<span>' + trwanieTxt(z.trwanie) + '</span>' : '') + '</div>';
+  } else if (z.kiedy){
+    czas = '<div class="czas caly"><b>cały</b><span>dzień</span></div>';
+  } else {
+    czas = '<div class="czas pusta"><b>—</b></div>';
+  }
+
   const meta = [];
-  if (data) meta.push('<span class="tag">' + data + '</span>');
-  if (bliskoTxt) meta.push('<span class="' + (bliskoTxt.spoznione ? 'spoznione' : '') + '">' + bliskoTxt.txt + '</span>');
-  if (z.trwanie) meta.push('<span>' + trwanieTxt(z.trwanie) + '</span>');
+  const data = ludzkaData(z);
+  if (data && widok !== 'kalendarz'){
+    const bezGodz = z.maGodzine ? data.replace(/\s+\d{2}:\d{2}$/, '') : data;
+    if (bezGodz) meta.push('<span class="tag">' + bezGodz + '</span>');
+  }
+  if (bliskoTxt) meta.push('<span class="' + (bliskoTxt.spoznione ? 'spoznione' : 'blisko') + '">' + bliskoTxt.txt + '</span>');
+  if (z.pilne) meta.push('<span class="tag pilnyTag">pilne</span>');
   if (z.powtarzanie) meta.push('<span class="tag">powtarza się</span>');
+
   return '<div class="' + klasy.join(' ') + '" data-id="' + z.id + '">' +
+    czas +
     '<button class="ptak" data-akcja="zrobione">✓</button>' +
     '<div class="tresc"><div class="tytul" data-akcja="edytuj" title="Dotknij, żeby poprawić">' + esc(z.tytul) + '</div>' +
       (meta.length ? '<div class="meta">' + meta.join('') + '</div>' : '') +
@@ -217,8 +236,82 @@ function rysuj(){
   const ekran = $('#ekran');
   if (widok === 'teraz') ekran.innerHTML = widokTeraz();
   else if (widok === 'dzis') ekran.innerHTML = widokDzis();
+  else if (widok === 'kalendarz') ekran.innerHTML = widokKalendarz();
   else ekran.innerHTML = widokWszystko();
   if (fokus) rysujTimer();
+}
+
+/* ---------------- KALENDARZ (jak w iPhonie) ---------------- */
+const MIESIACE_PL = ['styczeń','luty','marzec','kwiecień','maj','czerwiec',
+  'lipiec','sierpień','wrzesień','październik','listopad','grudzień'];
+
+let mcPokazany = (() => { const d = new Date(); d.setDate(1); d.setHours(0,0,0,0); return d; })();
+let dzienWybrany = dzisiaj();
+
+function zadaniaDnia(ts){
+  return stan.zadania.filter(z => z.kiedy && dzien(z.kiedy) === ts).sort(sortuj);
+}
+
+function widokKalendarz(){
+  const rok = mcPokazany.getFullYear(), mies = mcPokazany.getMonth();
+  const pierwszy = new Date(rok, mies, 1);
+  // poniedzialek jako pierwszy dzien tygodnia
+  const przesun_ = (pierwszy.getDay() + 6) % 7;
+  const start = new Date(rok, mies, 1 - przesun_);
+
+  let html = '<div class="kalNag">' +
+    '<button class="kalStrz" data-ruch="-1">‹</button>' +
+    '<div class="kalMc">' + MIESIACE_PL[mies] + ' <span>' + rok + '</span></div>' +
+    '<button class="kalStrz" data-ruch="1">›</button>' +
+    '</div>';
+
+  html += '<div class="kalDni">' +
+    ['pn','wt','śr','cz','pt','so','nd'].map(d => '<div>' + d + '</div>').join('') +
+    '</div>';
+
+  html += '<div class="kalSiatka">';
+  for (let i = 0; i < 42; i++){
+    const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
+    const ts = dzien(d);
+    const zad = zadaniaDnia(ts);
+    const otwarte = zad.filter(z => !z.zrobione);
+    const klasy = ['kalDzien'];
+    if (d.getMonth() !== mies) klasy.push('obcy');
+    if (ts === dzisiaj()) klasy.push('dzisiaj');
+    if (ts === dzienWybrany) klasy.push('wybrany');
+    if ((d.getDay() + 6) % 7 >= 5) klasy.push('weekend');
+
+    let kropki = '';
+    if (otwarte.length){
+      const pilne = otwarte.some(z => z.pilne);
+      const ile = Math.min(otwarte.length, 3);
+      kropki = '<div class="kalKropki">' +
+        Array.from({length: ile}, () => '<i class="' + (pilne ? 'pilna' : '') + '"></i>').join('') +
+        '</div>';
+    }
+    html += '<button class="' + klasy.join(' ') + '" data-dzien="' + ts + '">' +
+      '<span class="kalNr">' + d.getDate() + '</span>' + kropki + '</button>';
+  }
+  html += '</div>';
+
+  // --- lista wybranego dnia ---
+  const wyb = new Date(dzienWybrany);
+  const nazwa = wyb.toLocaleDateString('pl-PL',{weekday:'long', day:'numeric', month:'long'});
+  const zad = zadaniaDnia(dzienWybrany);
+  html += '<div class="kalDzienNag">' + nazwa.charAt(0).toUpperCase() + nazwa.slice(1) +
+          (dzienWybrany === dzisiaj() ? ' <b>dziś</b>' : '') + '</div>';
+
+  if (!zad.length){
+    html += '<div class="pusto" style="padding:26px 20px">Nic tego dnia.</div>';
+  } else {
+    html += zad.map(kartaHTML).join('');
+  }
+
+  const bez = stan.zadania.filter(z => !z.zrobione && !z.kiedy);
+  if (bez.length){
+    html += '<h2 class="sekcja">Bez terminu (' + bez.length + ')</h2>' + bez.map(kartaHTML).join('');
+  }
+  return html;
 }
 
 function widokTeraz(){
@@ -357,7 +450,8 @@ setInterval(() => {
     }
   }
   if (zmiana) zapisz();
-  if (widok !== 'wszystko') rysuj();
+  // nie przerysowuj, gdy ktos wlasnie poprawia tekst zadania
+  if (!document.querySelector('input.edycja')) rysuj();
 }, 20000);
 
 /* ---------------- .ics — realne przypomnienia w iPhone ---------------- */
@@ -536,6 +630,22 @@ $('#tabs').addEventListener('click', e => {
 });
 
 $('#ekran').addEventListener('click', e => {
+  // nawigacja kalendarza
+  const strz = e.target.closest('[data-ruch]');
+  if (strz){
+    mcPokazany.setMonth(mcPokazany.getMonth() + (+strz.dataset.ruch));
+    rysuj(); return;
+  }
+  const kom = e.target.closest('[data-dzien]');
+  if (kom){
+    dzienWybrany = +kom.dataset.dzien;
+    const d = new Date(dzienWybrany);
+    if (d.getMonth() !== mcPokazany.getMonth()){
+      mcPokazany = new Date(d.getFullYear(), d.getMonth(), 1);
+    }
+    rysuj(); return;
+  }
+
   const btn = e.target.closest('[data-akcja]'); if (!btn) return;
   const kontener = btn.closest('[data-id]'); if (!kontener) return;
   const id = kontener.dataset.id;

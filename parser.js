@@ -56,6 +56,41 @@ const KATEGORIE = [
 
 const PILNE = ['pilne','pilnie','na juz','na już','wazne','ważne','asap','natychmiast','koniecznie'];
 
+/* Dyktowanie czesto zapisuje godziny slowami: "o pietnastej", "o wpol do trzeciej".
+   Klucze bez ogonkow, bo tekst jest wczesniej normalizowany. */
+const GODZINY_SLOWNIE = {
+  'pierwszej':1,'drugiej':2,'trzeciej':3,'czwartej':4,'piatej':5,'szostej':6,
+  'siodmej':7,'osmej':8,'dziewiatej':9,'dziesiatej':10,'jedenastej':11,'dwunastej':12,
+  'trzynastej':13,'czternastej':14,'pietnastej':15,'szesnastej':16,'siedemnastej':17,
+  'osiemnastej':18,'dziewietnastej':19,'dwudziestej':20,
+  'dwudziestej pierwszej':21,'dwudziestej drugiej':22,'dwudziestej trzeciej':23,
+  // formy mianownikowe, tez sie zdarzaja
+  'pierwsza':1,'druga':2,'trzecia':3,'czwarta':4,'piata':5,'szosta':6,'siodma':7,
+  'osma':8,'dziewiata':9,'dziesiata':10,'jedenasta':11,'dwunasta':12,
+  'trzynasta':13,'czternasta':14,'pietnasta':15,'szesnasta':16,'siedemnasta':17,
+  'osiemnasta':18,'dziewietnasta':19,'dwudziesta':20
+};
+
+/* Liczebniki glowne — do "za dwadziescia minut", "na czterdziesci piec minut". */
+const LICZEBNIKI = {
+  'jeden':1,'jedna':1,'dwa':2,'dwie':2,'trzy':3,'cztery':4,'piec':5,'szesc':6,
+  'siedem':7,'osiem':8,'dziewiec':9,'dziesiec':10,'jedenascie':11,'dwanascie':12,
+  'trzynascie':13,'czternascie':14,'pietnascie':15,'szesnascie':16,'siedemnascie':17,
+  'osiemnascie':18,'dziewietnascie':19,'dwadziescia':20,'trzydziesci':30,
+  'czterdziesci':40,'piecdziesiat':50,'szescdziesiat':60
+};
+
+/* "dwadziescia piec" = 25 — sklada dziesiatke z jednostka. */
+function liczbaZeSlow(txt){
+  const slowa = txt.trim().split(/\s+/);
+  let suma = 0, cos = false;
+  for (const w of slowa){
+    if (LICZEBNIKI[w] === undefined) return null;
+    suma += LICZEBNIKI[w]; cos = true;
+  }
+  return cos ? suma : null;
+}
+
 /* Polskie znaki na ASCII — zamiana jeden do jednego, wiec pozycje liter
    zostaja te same i dalej mozemy odciac dopasowane fragmenty z tytulu.
    Bez tego granica slowa \b nie dziala po literach a c e l n o s z:
@@ -118,6 +153,45 @@ function parsuj(tekst, teraz){
   //     zeby "11.30" nie zostalo wziete za date dzienna ---
   if (godz === null && (m = zjedz(/\b(?:o |na |ok\.? |okolo |około )(\d{1,2})[:.](\d{2})\b/))) {
     godz = +m[1]; min = +m[2]; maGodzine = true;
+  }
+
+  // --- godzina slowem: "o pietnastej", "o dziewiatej trzydziesci", "o wpol do trzeciej" ---
+  let godzZeSlow = false, juzPopoludnie = false;
+  if (godz === null){
+    const slowa = Object.keys(GODZINY_SLOWNIE).sort((a,b) => b.length - a.length).join('|');
+    const licz  = Object.keys(LICZEBNIKI).sort((a,b) => b.length - a.length).join('|');
+    const minuty = '(?:\\s+((?:' + licz + ')(?:\\s+(?:' + licz + '))?))?';
+
+    if ((m = zjedz(new RegExp('\\b(?:o )?wpol do (' + slowa + ')\\b')))){
+      godz = (GODZINY_SLOWNIE[m[1]] + 23) % 24; min = 30; maGodzine = true; godzZeSlow = true;
+    }
+    else if ((m = zjedz(new RegExp('\\b(?:o |na |ok\\.? |okolo )(' + slowa + ')\\b' + minuty)))){
+      godz = GODZINY_SLOWNIE[m[1]]; min = 0; maGodzine = true; godzZeSlow = true;
+      if (m[2]){
+        const mm = liczbaZeSlow(m[2]);
+        if (mm !== null && mm <= 59) min = mm;
+      }
+    }
+
+    /* "o trzeciej" to w praktyce 15:00, nie 3:00 — nikt nie umawia sie w nocy.
+       Godziny 1-7 przesuwamy na popoludnie, chyba ze pada "rano". */
+    if (godzZeSlow && godz >= 1 && godz <= 7 && !/\b(rano|nad ranem|z rana)\b/.test(t)){
+      godz += 12; juzPopoludnie = true;
+    }
+  }
+
+  // --- "za dwadziescia minut", "za pol godziny" slowami ---
+  if (godz === null){
+    const licz = Object.keys(LICZEBNIKI).sort((a,b) => b.length - a.length).join('|');
+    if ((m = zjedz(new RegExp('\\bza ((?:' + licz + ')(?: (?:' + licz + '))?)\\s*(minut\\w*|godzin\\w*)')))){
+      const n = liczbaZeSlow(m[1]);
+      if (n !== null){
+        const d = new Date(teraz);
+        if (/^minut/.test(m[2])) d.setMinutes(d.getMinutes() + n);
+        else d.setHours(d.getHours() + n);
+        data = startOfDay(d); godz = d.getHours(); min = d.getMinutes(); maGodzine = true;
+      }
+    }
   }
 
   // --- dzisiaj / jutro / pojutrze / weekend / za tydzien ---
@@ -185,7 +259,7 @@ function parsuj(tekst, teraz){
       zjedzone.push(r[0]);
       const h = PORY[slowo];
       if (godz === null) { godz = h; min = 0; maGodzine = true; }
-      else if (h >= 12 && godz <= 12) { godz = (godz % 12) + 12; }
+      else if (h >= 12 && godz <= 12 && !juzPopoludnie) { godz = (godz % 12) + 12; }
       break;
     }
   }
@@ -195,6 +269,12 @@ function parsuj(tekst, teraz){
     trwanie = /^godz|^h/.test(m[2]) ? (+m[1]) * 60 : +m[1];
   } else if ((m = zjedz(/\b(?:na |przez )(godzin\w+|pol godziny|pół godziny|kwadrans)\b/))) {
     trwanie = /kwadrans/.test(m[1]) ? 15 : (/pol|pół/.test(m[1]) ? 30 : 60);
+  } else {
+    const licz = Object.keys(LICZEBNIKI).sort((a,b) => b.length - a.length).join('|');
+    if ((m = zjedz(new RegExp('\\b(?:na |przez )((?:' + licz + ')(?: (?:' + licz + '))?)\\s*(minut\\w*|godzin\\w*)')))){
+      const n = liczbaZeSlow(m[1]);
+      if (n !== null) trwanie = /^godzin/.test(m[2]) ? n * 60 : n;
+    }
   }
 
   // --- pilnosc ---

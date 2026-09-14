@@ -1,13 +1,13 @@
 :root{
-  --tlo:#0f1115;
-  --karta:#181c23;
-  --karta2:#20252e;
+  --tlo:#0b0d11;
+  --karta:#1a1f27;
+  --karta2:#252b35;
   --tekst:#e9edf3;
   --przygas:#8b95a5;
   --akcent:#4ade80;
   --akcent2:#22c55e;
   --pilne:#fb923c;
-  --linia:#262c36;
+  --linia:#333b47;
   --r:16px;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -42,7 +42,8 @@ body{
 main{flex:1;overflow-y:auto;padding:14px 12px 16px;-webkit-overflow-scrolling:touch}
 h2.sekcja{
   font-size:12px;letter-spacing:.09em;text-transform:uppercase;
-  color:var(--przygas);margin:20px 4px 8px;font-weight:700;
+  color:var(--przygas);margin:26px 2px 10px;font-weight:700;
+  padding-left:10px;border-left:3px solid var(--linia);
 }
 h2.sekcja:first-child{margin-top:4px}
 
@@ -53,13 +54,29 @@ h2.sekcja:first-child{margin-top:4px}
 
 /* ---------- karta zadania ---------- */
 .zad{
-  display:flex;align-items:flex-start;gap:12px;
+  display:flex;align-items:center;gap:12px;
   background:var(--karta);border-radius:var(--r);
-  padding:13px 14px;margin-bottom:8px;
-  border-left:3px solid transparent;
+  padding:12px 14px;margin-bottom:10px;
+  border:1px solid var(--linia);
+  border-left:4px solid var(--linia);
 }
 .zad.pilne{border-left-color:var(--pilne)}
-.zad.terazTermin{border-left-color:var(--akcent)}
+.zad.zaraz{border-left-color:var(--akcent)}
+.zad.poTerminie{border-left-color:#f87171}
+
+/* godzina — osobna kolumna, zeby dalo sie skanowac wzrokiem */
+.czas{
+  flex:0 0 58px;text-align:center;line-height:1.15;
+  padding-right:12px;border-right:1px solid var(--linia);
+}
+.czas b{display:block;font-size:19px;font-weight:700;
+  font-variant-numeric:tabular-nums;letter-spacing:-.5px;color:var(--tekst)}
+.czas span{display:block;font-size:11px;color:var(--przygas);margin-top:2px}
+.czas.caly b{font-size:14px;color:var(--przygas);font-weight:600}
+.czas.caly span{font-size:11px}
+.czas.pusta b{color:var(--linia);font-size:22px}
+.zad.zaraz .czas b{color:var(--akcent)}
+.zad.poTerminie .czas b{color:#f87171}
 .ptak{
   flex:0 0 26px;height:26px;margin-top:1px;border-radius:9px;
   border:2px solid var(--linia);background:transparent;cursor:pointer;
@@ -70,9 +87,11 @@ h2.sekcja:first-child{margin-top:4px}
 .zad.zrobione .ptak{background:var(--akcent);border-color:var(--akcent);color:#06210f}
 .zad.zrobione .tresc{opacity:.45;text-decoration:line-through}
 .tresc{flex:1;min-width:0}
-.tytul{font-weight:600;word-wrap:break-word}
+.tytul{font-weight:600;font-size:16px;line-height:1.3;word-wrap:break-word}
 .meta{font-size:13px;color:var(--przygas);margin-top:3px;display:flex;flex-wrap:wrap;gap:8px}
-.meta .tag{background:var(--karta2);padding:1px 8px;border-radius:99px}
+.meta .tag{background:var(--karta2);padding:2px 9px;border-radius:99px}
+.meta .pilnyTag{background:rgba(251,146,60,.18);color:var(--pilne)}
+.meta .blisko{color:var(--akcent)}
 .meta .spoznione{color:var(--pilne)}
 .akcje{display:flex;flex-direction:column;gap:6px}
 .mini{
@@ -183,3 +202,57 @@ input.edycja{
   color:var(--tekst);border-radius:9px;padding:6px 9px;
   font-size:16px;font-weight:600;font-family:inherit;outline:none;
 }
+
+/* ---------- KALENDARZ ---------- */
+.kalNag{
+  display:flex;align-items:center;justify-content:space-between;
+  margin:0 2px 14px;
+}
+.kalMc{font-size:21px;font-weight:700;text-transform:capitalize}
+.kalMc span{color:var(--przygas);font-weight:500}
+.kalStrz{
+  border:0;background:var(--karta);color:var(--tekst);
+  width:40px;height:40px;border-radius:12px;font-size:24px;
+  line-height:1;cursor:pointer;
+}
+.kalStrz:active{background:var(--karta2)}
+
+.kalDni{
+  display:grid;grid-template-columns:repeat(7,1fr);
+  text-align:center;font-size:11px;font-weight:700;
+  color:var(--przygas);text-transform:uppercase;
+  letter-spacing:.06em;margin-bottom:6px;
+}
+
+.kalSiatka{
+  display:grid;grid-template-columns:repeat(7,1fr);gap:3px;
+  margin-bottom:6px;
+}
+.kalDzien{
+  position:relative;aspect-ratio:1;border:0;background:transparent;
+  color:var(--tekst);border-radius:12px;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:3px;padding:0;font-family:inherit;
+}
+.kalNr{font-size:16px;font-weight:600;font-variant-numeric:tabular-nums}
+.kalDzien.obcy .kalNr{color:#4a5260}
+.kalDzien.weekend .kalNr{color:var(--przygas)}
+.kalDzien.obcy.weekend .kalNr{color:#3d4450}
+.kalDzien.dzisiaj .kalNr{color:var(--akcent);font-weight:800}
+.kalDzien.wybrany{background:var(--karta2)}
+.kalDzien.wybrany.dzisiaj{background:var(--akcent)}
+.kalDzien.wybrany.dzisiaj .kalNr{color:#06210f}
+.kalDzien:active{background:var(--linia)}
+
+.kalKropki{display:flex;gap:3px;height:5px}
+.kalKropki i{width:5px;height:5px;border-radius:50%;background:var(--akcent)}
+.kalKropki i.pilna{background:var(--pilne)}
+.kalDzien.wybrany.dzisiaj .kalKropki i{background:#06210f}
+
+.kalDzienNag{
+  font-size:13px;font-weight:700;color:var(--przygas);
+  text-transform:uppercase;letter-spacing:.06em;
+  margin:20px 2px 10px;padding-top:16px;
+  border-top:1px solid var(--linia);
+}
+.kalDzienNag b{color:var(--akcent)}
