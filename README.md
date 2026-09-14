@@ -1,17 +1,36 @@
 # Ogarniacz
 
 Głosowy asystent zadań dla głowy, która pamięta wszystko naraz i nic po kolei.
-Działa na Macu i na iPhonie. Wszystko lokalnie — bez konta, bez chmury, bez żadnych opłat.
+Działa na Macu i na iPhonie. Zadania siedzą w telefonie — bez chmury, bez opłat.
 
-## Jak uruchomić
+## Adres
 
-W terminalu:
+**https://ktosnapewno93939.github.io/ogarniacz/**
+
+Działa zawsze, nic nie trzeba uruchamiać. Na iPhonie: Safari → Udostępnij →
+**Dodaj do ekranu początkowego**.
+
+## Wgrywanie poprawek
+
+Po każdej zmianie w kodzie:
+
+```
+~/ogarniacz/wgraj.sh
+```
+
+albo z opisem: `~/ogarniacz/wgraj.sh "poprawka mikrofonu"`
+
+Po ~40 sekundach jest na żywo. Apka na telefonie sama wykrywa nową wersję
+przy następnym otwarciu i się przeładowuje — nic nie trzeba czyścić.
+
+## Podgląd lokalny (przed wgraniem)
 
 ```
 ~/ogarniacz/start.sh
 ```
 
-Otworzy się w przeglądarce. Zatrzymanie: `Ctrl+C`.
+Otworzy się na `http://localhost:8777`. Zatrzymanie: `Ctrl+C`.
+Mikrofon działa, bo `localhost` liczy się jako bezpieczny adres.
 
 ## Jak używać
 
@@ -59,20 +78,11 @@ pory dnia (rano, po południu, wieczorem, w nocy).
 
 ## iPhone
 
-Safari daje stronie dostęp do mikrofonu **tylko przez HTTPS**. Zwykły adres
-`http://192.168.x.x:8777` otworzy apkę, ale mikrofon w niej nie ruszy.
-Dlatego do telefonu jest osobny skrypt, który robi darmowy adres HTTPS:
+Otwórz w Safari: **https://ktosnapewno93939.github.io/ogarniacz/**
+→ Udostępnij → **Dodaj do ekranu początkowego**.
 
-```
-~/ogarniacz/telefon.sh
-```
-
-Wypisze adres `https://coś-tam.trycloudflare.com` (i skopiuje go do schowka).
-Otwórz go w Safari na iPhonie → Udostępnij → **Dodaj do ekranu początkowego**.
 Przy pierwszym kliknięciu mikrofonu Safari zapyta o zgodę — zezwól.
-
-Adres żyje tak długo, jak działa skrypt (`Ctrl+C` kończy). Przy każdym uruchomieniu
-jest nowy — to wersja do testów. Na stałe: darmowy GitHub Pages albo wersja natywna.
+Adres jest po HTTPS, więc mikrofon działa (to jest warunek, który stawia Safari).
 
 **Dyktowanie działa tak samo na Macu i na iPhonie:** klikasz mikrofon, mówisz,
 apka sama zapisuje po skończeniu zdania. Ponowne kliknięcie kończy nagrywanie od razu.
