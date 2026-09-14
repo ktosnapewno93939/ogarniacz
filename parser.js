@@ -56,8 +56,21 @@ const KATEGORIE = [
 
 const PILNE = ['pilne','pilnie','na juz','na już','wazne','ważne','asap','natychmiast','koniecznie'];
 
+/* Polskie znaki na ASCII — zamiana jeden do jednego, wiec pozycje liter
+   zostaja te same i dalej mozemy odciac dopasowane fragmenty z tytulu.
+   Bez tego granica slowa \b nie dziala po literach a c e l n o s z:
+   "za tydzien'" czy "dzis'" nigdy sie nie dopasowywaly. */
+const OGONKI = { 'ą':'a','ć':'c','ę':'e','ł':'l','ń':'n','ó':'o','ś':'s','ź':'z','ż':'z' };
+
+function bezOgonkow(s){
+  return s.replace(/[ąćęłńóśźż]/g, z => OGONKI[z]);
+}
+
+const MIESIACE_ASCII = {};
+for (const k of Object.keys(MIESIACE)) MIESIACE_ASCII[bezOgonkow(k)] = MIESIACE[k];
+
 function norm(s){
-  return s.toLowerCase().replace(/\s+/g,' ').trim();
+  return bezOgonkow(s.toLowerCase()).replace(/\s+/g,' ').trim();
 }
 
 function startOfDay(d){ const x = new Date(d); x.setHours(0,0,0,0); return x; }
@@ -126,7 +139,7 @@ function parsuj(tekst, teraz){
     const re = /\b(?:w |we |na )?(przyszl\w+ |przyszł\w+ )?(poniedzial\w+|poniedział\w+|wtorek|srod\w+|środ\w+|czwartek|piat\w+|piąt\w+|sobot\w+|niedziel\w+)\b/;
     if ((m = t.match(re))) {
       const slowo = m[2];
-      const klucz = Object.keys(DNI).find(k => slowo.slice(0,5) === k.slice(0,5));
+      const klucz = Object.keys(DNI).find(k => slowo.slice(0,5) === bezOgonkow(k).slice(0,5));
       if (klucz !== undefined) {
         const cel = DNI[klucz];
         const d = new Date(teraz);
@@ -142,8 +155,8 @@ function parsuj(tekst, teraz){
 
   // --- data konkretna: najpierw slowna ("3 pazdziernika"), potem cyfrowa ("20.09") ---
   if (!data) {
-    if ((m = zjedz(new RegExp('\\b(\\d{1,2})\\s+(' + Object.keys(MIESIACE).join('|') + ')\\b')))) {
-      const dzien = +m[1], mies = MIESIACE[m[2]];
+    if ((m = zjedz(new RegExp('\\b(\\d{1,2})\\s+(' + Object.keys(MIESIACE_ASCII).join('|') + ')\\b')))) {
+      const dzien = +m[1], mies = MIESIACE_ASCII[m[2]];
       let d = new Date(teraz.getFullYear(), mies, dzien);
       if (d < startOfDay(teraz)) d = new Date(teraz.getFullYear() + 1, mies, dzien);
       data = startOfDay(d);
@@ -166,7 +179,7 @@ function parsuj(tekst, teraz){
 
   // --- pora dnia ---
   for (const slowo of Object.keys(PORY)) {
-    const re = new RegExp('\\b' + slowo.replace(/ /g, '\\s+') + '\\b');
+    const re = new RegExp('\\b' + bezOgonkow(slowo).replace(/ /g, '\\s+') + '\\b');
     const r = t.match(re);
     if (r) {
       zjedzone.push(r[0]);
@@ -187,7 +200,7 @@ function parsuj(tekst, teraz){
   // --- pilnosc ---
   let pilne = false;
   for (const p of PILNE) {
-    const re = new RegExp('\\b' + p.replace(/ /g, '\\s+') + '\\b');
+    const re = new RegExp('\\b' + bezOgonkow(p).replace(/ /g, '\\s+') + '\\b');
     const r = t.match(re);
     if (r) { pilne = true; zjedzone.push(r[0]); break; }
   }
@@ -195,7 +208,7 @@ function parsuj(tekst, teraz){
   // --- kategoria ---
   let kategoria = 'inne', ikona = 'ZADANIE';
   for (const k of KATEGORIE) {
-    if (k.slowa.some(s => t.indexOf(s) !== -1)) { kategoria = k.id; ikona = k.ikona; break; }
+    if (k.slowa.some(w => t.indexOf(bezOgonkow(w)) !== -1)) { kategoria = k.id; ikona = k.ikona; break; }
   }
 
   // --- zlozenie terminu ---

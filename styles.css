@@ -175,3 +175,11 @@ hr{border:0;border-top:1px solid var(--linia);margin:14px 0}
   padding:11px 18px;border-radius:99px;z-index:30;font-size:14px;
   box-shadow:0 8px 24px rgba(0,0,0,.4);
 }
+
+/* poprawianie tekstu zadania w miejscu */
+.tytul[data-akcja="edytuj"]{cursor:text}
+input.edycja{
+  width:100%;background:var(--karta2);border:1px solid var(--akcent);
+  color:var(--tekst);border-radius:9px;padding:6px 9px;
+  font-size:16px;font-weight:600;font-family:inherit;outline:none;
+}

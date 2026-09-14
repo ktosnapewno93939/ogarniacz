@@ -130,6 +130,36 @@ function naJutro(id){
   zapisz(); rysuj(); toast('Na jutro');
 }
 
+/* Dyktowanie potrafi przekrecic imie ("do Zosi" -> "do Zosii").
+   Dotkniecie tekstu zamienia go w pole do poprawienia. */
+function edytuj(el, id){
+  const z = stan.zadania.find(x => x.id === id);
+  if (!z || el.querySelector('input')) return;
+
+  const inp = document.createElement('input');
+  inp.type = 'text';
+  inp.className = 'edycja';
+  inp.value = z.tytul;
+  el.textContent = '';
+  el.appendChild(inp);
+  inp.focus();
+  inp.setSelectionRange(inp.value.length, inp.value.length);
+
+  let zamkniete = false;
+  const zapiszTytul = () => {
+    if (zamkniete) return;
+    zamkniete = true;
+    const nowy = inp.value.trim();
+    if (nowy && nowy !== z.tytul){ z.tytul = nowy; zapisz(); }
+    rysuj();
+  };
+  inp.addEventListener('blur', zapiszTytul);
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Enter'){ e.preventDefault(); inp.blur(); }
+    if (e.key === 'Escape'){ zamkniete = true; rysuj(); }
+  });
+}
+
 function usun(id){
   const i = stan.zadania.findIndex(x => x.id === id);
   if (i >= 0){ stan.zadania.splice(i,1); zapisz(); rysuj(); toast('Usunięte'); }
@@ -173,7 +203,7 @@ function kartaHTML(z){
   if (z.powtarzanie) meta.push('<span class="tag">powtarza się</span>');
   return '<div class="' + klasy.join(' ') + '" data-id="' + z.id + '">' +
     '<button class="ptak" data-akcja="zrobione">✓</button>' +
-    '<div class="tresc"><div class="tytul">' + esc(z.tytul) + '</div>' +
+    '<div class="tresc"><div class="tytul" data-akcja="edytuj" title="Dotknij, żeby poprawić">' + esc(z.tytul) + '</div>' +
       (meta.length ? '<div class="meta">' + meta.join('') + '</div>' : '') +
     '</div>' +
     '<div class="akcje">' +
@@ -510,6 +540,7 @@ $('#ekran').addEventListener('click', e => {
   const kontener = btn.closest('[data-id]'); if (!kontener) return;
   const id = kontener.dataset.id;
   const a = btn.dataset.akcja;
+  if (a === 'edytuj'){ edytuj(btn, id); return; }
   if (a === 'zrobione'){ if (fokus && fokus.id === id) stopFokus(); zrobione(id); }
   else if (a === 'plus') przesun(id, 15);
   else if (a === 'jutro') naJutro(id);
