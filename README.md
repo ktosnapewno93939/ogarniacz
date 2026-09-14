@@ -47,7 +47,8 @@ Mówisz normalnie, po polsku — aplikacja sama wyciąga termin, godzinę i kate
 | „pilne zadzwonić do księgowej" | oznaczone jako pilne, ląduje na górze |
 | „trening codziennie o 7" | powtarza się co dzień |
 | „napisz maila do galerii na 30 minut" | z blokiem 30 minut na fokus |
-| „kup mleko" | bez terminu → skrzynka |
+| „kup mleko" | bez godziny → dziś, cały dzień |
+| „notatka: album mini dla klientów" | → Notatnik |
 | „spotkanie o wpół do trzeciej" | 14:30 |
 | „zadzwoń o piętnastej" | 15:00 |
 | „wizyta o dziewiątej trzydzieści" | 9:30 |
@@ -62,11 +63,34 @@ Godziny rozumie też **słowami**, bo dyktowanie często tak je zapisuje:
 „za dwadzieścia minut", „na czterdzieści pięć minut". Przy godzinach 1–7
 zakłada popołudnie („o trzeciej" = 15:00), chyba że padnie „rano".
 
-### Trzy zakładki
+### Cztery zakładki
 
 - **Teraz** — jedno zadanie. To, które ma sens zrobić w tej chwili (po terminie > pilne > najbliższa godzina > szybkie). Plus timer fokusa.
 - **Dziś** — zaległe, dzisiejsze i skrzynka (rzeczy bez terminu, do rozdzielenia).
 - **Kalendarz** — miesiąc jak w iPhonie: kropki pod dniami z zadaniami (pomarańczowa = pilne), dotknięcie dnia pokazuje jego listę pod spodem.
+- **Notatnik** — pomysły bez terminu: projekt do zrobienia, coś do sprawdzenia, myśl której szkoda stracić.
+
+### Zadanie zawsze ma termin
+
+Nie ma już „skrzynki bez terminu". Rzecz bez daty przepada między dniami —
+nie widać jej w kalendarzu, nie przypomni się, po tygodniu jest martwa.
+Dlatego gdy nie podasz terminu, zadanie ląduje na **dziś** jako całodniowe.
+
+Przy wpisywaniu, pod podglądem, są przyciski na jedno dotknięcie:
+**za 30 min · za godzinę · dziś 18:00 · jutro 9:00**.
+
+### Notatnik — na to, co nie jest jeszcze zadaniem
+
+Powiedz z dowolnego ekranu **„notatka…"**, **„pomysł…"**, **„zanotuj…"**
+albo **„pamiętaj…"** — wyląduje w notatniku zamiast w zadaniach.
+Będąc na zakładce Notatnik, wszystko co wpiszesz idzie tam bez słowa-klucza.
+
+- dotknięcie treści — poprawianie w miejscu, notatka może być długa
+- **☆** — przypięcie na górę
+- **→ zadanie** — zamienia notatkę w zadanie na dziś, stamtąd ustawiasz termin
+
+To rozdzielenie jest celowe: zadania mają terminy i pilnują Cię same,
+notatki czekają spokojnie, aż sam zdecydujesz, że to robisz.
 
 ### Przyciski przy zadaniu
 

@@ -282,3 +282,41 @@ input.edycja{
 }
 .slowo button:active{background:var(--pilne);color:#1a1004}
 .slownikPusto{font-size:13px;color:var(--przygas)}
+
+/* ---------- 4 zakladki ---------- */
+.tab{font-size:13px;padding:9px 4px}
+
+/* ---------- szybkie terminy pod podgladem ---------- */
+.szybkie{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
+.szybkie button{
+  border:1px solid var(--linia);background:var(--karta);
+  color:var(--tekst);border-radius:99px;padding:6px 12px;
+  font-size:13px;font-weight:600;cursor:pointer;
+}
+.szybkie button:active{background:var(--akcent);color:#06210f;border-color:var(--akcent)}
+
+/* ---------- NOTATNIK ---------- */
+.notka{
+  background:var(--karta);border:1px solid var(--linia);
+  border-left:4px solid var(--linia);
+  border-radius:var(--r);padding:14px 15px;margin-bottom:10px;
+}
+.notka.przypieta{border-left-color:var(--akcent)}
+.notkaTresc{
+  font-size:16px;line-height:1.5;white-space:pre-wrap;
+  word-wrap:break-word;cursor:text;
+}
+.notkaStopka{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:10px;margin-top:12px;padding-top:11px;
+  border-top:1px solid var(--linia);
+}
+.notkaData{font-size:12px;color:var(--przygas)}
+.notkaBtny{display:flex;gap:6px}
+.mini.szeroka{width:auto;padding:0 11px;font-size:12px;font-weight:600}
+textarea.edycjaNotki{
+  width:100%;background:var(--karta2);border:1px solid var(--akcent);
+  color:var(--tekst);border-radius:10px;padding:10px 12px;
+  font-size:16px;line-height:1.5;font-family:inherit;
+  outline:none;resize:none;min-height:60px;
+}

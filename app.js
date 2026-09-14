@@ -15,10 +15,13 @@ function wczytaj(){
       s.ustawienia = Object.assign({ przed:10, fokus:25 }, s.ustawienia || {});
       s.seria = s.seria || { dzien:null, ile:0 };
       s.slownik = Array.isArray(s.slownik) ? s.slownik : [];
+      s.notatki = Array.isArray(s.notatki) ? s.notatki : [];
+      // zadania z dawnej "skrzynki" dostaja termin na dzis — nic nie ginie
+      s.zadania.forEach(z => { if (!z.kiedy){ z.kiedy = new Date(); z.kiedy.setHours(0,0,0,0); z.maGodzine = false; } });
       return s;
     }
   }catch(e){}
-  return { zadania:[], ustawienia:{ przed:10, fokus:25 }, seria:{ dzien:null, ile:0 }, slownik:[] };
+  return { zadania:[], notatki:[], ustawienia:{ przed:10, fokus:25 }, seria:{ dzien:null, ile:0 }, slownik:[] };
 }
 function zapisz(){ localStorage.setItem(KLUCZ, JSON.stringify(stan)); }
 
@@ -124,10 +127,53 @@ function zapamietajSlowo(w){
   return true;
 }
 
+/* ---------------- notatnik ----------------
+   Miejsce na pomysly, ktore nie sa jeszcze zadaniem: projekt do zrobienia,
+   cos ciekawego do sprawdzenia, mysl ktora nie moze uciec.
+   Zadania ZAWSZE maja termin — bez terminu rzecz ginie. Tu terminu nie ma
+   i o to chodzi: notatka czeka, az sam zdecydujesz, ze to robisz. */
+/* Uwaga: zadnego \b po tych slowach — "pomysl'" konczy sie polska litera,
+   a \b jej nie uznaje za litere i wzorzec by nie trafil. */
+const SLOWA_NOTATKI = /^\s*(notatka|notatke|notatkę|notuj|zanotuj|pomysl|pomysł|pomysly|pomysły|zapamietaj|zapamiętaj|pamietaj|pamiętaj|idea|mysl|myśl)(?=$|[\s:,.\-—])[\s:,.\-—]*/i;
+
+function czyNotatka(tekst){
+  return SLOWA_NOTATKI.test(tekst);
+}
+
+function dodajNotatke(tekst){
+  const czysty = tekst.replace(SLOWA_NOTATKI, '').trim();
+  if (!czysty) return null;
+  const n = {
+    id: Date.now() + '-' + Math.random().toString(36).slice(2,7),
+    tresc: czysty.charAt(0).toUpperCase() + czysty.slice(1),
+    przypiete: false,
+    utworzone: new Date().toISOString()
+  };
+  stan.notatki.unshift(n);
+  zapisz();
+  return n;
+}
+
+function notatkaNaZadanie(id){
+  const i = stan.notatki.findIndex(n => n.id === id);
+  if (i < 0) return;
+  const n = stan.notatki[i];
+  const z = dodajZTekstu(n.tresc);
+  stan.notatki.splice(i, 1);
+  zapisz(); rysuj();
+  toast(z ? 'Zadanie na ' + ludzkaData(z) : 'Zrobione zadanie');
+}
+
 /* ---------------- zadania ---------------- */
 function dodajZTekstu(tekst){
   if (!tekst.trim()) return null;
   const p = parsuj(tekst);
+  // brak terminu = dzis. Rzecz bez daty nie istnieje — przepada miedzy dniami.
+  if (!p.kiedy){
+    p.kiedy = new Date();
+    p.kiedy.setHours(0,0,0,0);
+    p.maGodzine = false;
+  }
   const z = {
     id: Date.now() + '-' + Math.random().toString(36).slice(2,7),
     tytul: p.tytul,
@@ -308,8 +354,58 @@ function rysuj(){
   if (widok === 'teraz') ekran.innerHTML = widokTeraz();
   else if (widok === 'dzis') ekran.innerHTML = widokDzis();
   else if (widok === 'kalendarz') ekran.innerHTML = widokKalendarz();
+  else if (widok === 'notatnik') ekran.innerHTML = widokNotatnik();
   else ekran.innerHTML = widokWszystko();
   if (fokus) rysujTimer();
+}
+
+function widokNotatnik(){
+  if (!stan.notatki.length){
+    return '<div class="pusto"><b>Notatnik pusty.</b>' +
+      'Tu trafia to, co nie ma jeszcze terminu: pomysł na projekt, coś do sprawdzenia, myśl której szkoda stracić.<br><br>' +
+      'Powiedz <b>„notatka…"</b> albo <b>„pomysł…"</b> z dowolnego ekranu — wyląduje tutaj. ' +
+      'Albo pisz na tej zakładce, wtedy wszystko idzie do notatnika.</div>';
+  }
+  const przypiete = stan.notatki.filter(n => n.przypiete);
+  const reszta = stan.notatki.filter(n => !n.przypiete);
+  let html = '';
+  if (przypiete.length) html += '<h2 class="sekcja">Przypięte</h2>' + przypiete.map(notatkaHTML).join('');
+  if (reszta.length) html += (przypiete.length ? '<h2 class="sekcja">Reszta</h2>' : '') + reszta.map(notatkaHTML).join('');
+  return html;
+}
+
+function notatkaHTML(n){
+  const d = new Date(n.utworzone);
+  const kiedyTxt = d.toLocaleDateString('pl-PL',{day:'numeric', month:'short'});
+  return '<div class="notka' + (n.przypiete ? ' przypieta' : '') + '" data-id="' + n.id + '">' +
+    '<div class="notkaTresc" data-akcja="edytujNotke">' + esc(n.tresc) + '</div>' +
+    '<div class="notkaStopka">' +
+      '<span class="notkaData">' + kiedyTxt + '</span>' +
+      '<div class="notkaBtny">' +
+        '<button class="mini" data-akcja="przypnij" title="Przypnij">' + (n.przypiete ? '★' : '☆') + '</button>' +
+        '<button class="mini szeroka" data-akcja="naZadanie">→ zadanie</button>' +
+        '<button class="mini" data-akcja="usunNotke" title="Usuń">✕</button>' +
+      '</div>' +
+    '</div></div>';
+}
+
+function edytujNotke(el, id){
+  const n = stan.notatki.find(x => x.id === id);
+  if (!n || el.querySelector('textarea')) return;
+  const ta = document.createElement('textarea');
+  ta.className = 'edycjaNotki';
+  ta.value = n.tresc;
+  el.textContent = '';
+  el.appendChild(ta);
+  ta.style.height = Math.max(ta.scrollHeight, 60) + 'px';
+  ta.focus();
+  ta.setSelectionRange(ta.value.length, ta.value.length);
+  ta.addEventListener('input', () => { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px'; });
+  ta.addEventListener('blur', () => {
+    const nowy = ta.value.trim();
+    if (nowy && nowy !== n.tresc){ n.tresc = nowy; zapisz(); }
+    rysuj();
+  });
 }
 
 /* ---------------- KALENDARZ (jak w iPhonie) ---------------- */
@@ -378,21 +474,17 @@ function widokKalendarz(){
     html += zad.map(kartaHTML).join('');
   }
 
-  const bez = stan.zadania.filter(z => !z.zrobione && !z.kiedy);
-  if (bez.length){
-    html += '<h2 class="sekcja">Bez terminu (' + bez.length + ')</h2>' + bez.map(kartaHTML).join('');
-  }
   return html;
 }
 
 function widokTeraz(){
   const z = coTeraz();
   const naDzis = stan.zadania.filter(x => !x.zrobione && x.kiedy && dzien(x.kiedy) <= dzisiaj()).length;
-  const skrzynka = stan.zadania.filter(x => !x.zrobione && !x.kiedy).length;
+  const ileNotatek = stan.notatki.length;
 
   let html = '<div class="licznik">' +
     '<div class="licznikBox"><b>' + naDzis + '</b><span>na dziś</span></div>' +
-    '<div class="licznikBox"><b>' + skrzynka + '</b><span>bez terminu</span></div>' +
+    '<div class="licznikBox"><b>' + ileNotatek + '</b><span>w notatniku</span></div>' +
     '<div class="licznikBox"><b>' + (stan.seria.dzien === dzisiaj() ? stan.seria.ile : 0) + '</b><span>zrobione dziś</span></div>' +
     '</div>';
 
@@ -437,13 +529,11 @@ function widokDzis(){
   const otwarte = stan.zadania.filter(z => !z.zrobione);
   const spoznione = otwarte.filter(z => z.kiedy && dzien(z.kiedy) < dzisiaj()).sort(sortuj);
   const dzis = otwarte.filter(z => z.kiedy && dzien(z.kiedy) === dzisiaj()).sort(sortuj);
-  const bez = otwarte.filter(z => !z.kiedy);
   const zrobioneDzis = stan.zadania.filter(z => z.zrobione && z.kiedy && dzien(z.kiedy) === dzisiaj());
 
   let html = '';
   if (spoznione.length) html += '<h2 class="sekcja">Zaległe — bez wyrzutów, po prostu przesuń albo zrób</h2>' + spoznione.map(kartaHTML).join('');
   if (dzis.length) html += '<h2 class="sekcja">Dziś</h2>' + dzis.map(kartaHTML).join('');
-  if (bez.length) html += '<h2 class="sekcja">Skrzynka — do rozdzielenia (' + bez.length + ')</h2>' + bez.map(kartaHTML).join('');
   if (zrobioneDzis.length) html += '<h2 class="sekcja">Zrobione dziś</h2>' + zrobioneDzis.map(kartaHTML).join('');
   if (!html) html = '<div class="pusto"><b>Dziś pusto.</b>Wrzuć coś głosem — reszta sama się poukłada.</div>';
   return html;
@@ -656,7 +746,16 @@ function pokazPodglad(txt){
     if (p.powtarzanie) czesci.push(p.powtarzanie);
     return czesci.join(' · ');
   });
-  el.innerHTML = linie.join('<br>');
+  const p1 = parsuj(rozbij(txt)[0]);
+  let chipy = '';
+  if (!czyNotatka(txt) && widok !== 'notatnik' && !p1.maGodzine){
+    chipy = '<div class="szybkie">' +
+      [['za 30 minut','za 30 min'],['za godzinę','za godzinę'],
+       ['dziś o 18','dziś 18:00'],['jutro o 9','jutro 9:00']]
+      .map(([fraza,etykieta]) => '<button data-szybko="' + fraza + '">' + etykieta + '</button>').join('') +
+      '</div>';
+  }
+  el.innerHTML = linie.join('<br>') + chipy;
   el.classList.remove('ukryty');
 }
 
@@ -675,6 +774,21 @@ function rozbij(txt){
 function zatwierdz(){
   const txt = $('#pole').value;
   if (!txt.trim()) return;
+
+  // "notatka ..." / "pomysl ..." zawsze do notatnika; w zakladce Notatnik — wszystko
+  if (czyNotatka(txt) || widok === 'notatnik'){
+    const n = dodajNotatke(txt);
+    if (!n) return;
+    $('#pole').value = '';
+    $('#podglad').classList.add('ukryty');
+    ostatniePoprawki = [];
+    if (widok !== 'notatnik'){ widok = 'notatnik'; ustawZakladke('notatnik'); }
+    rysuj();
+    if (navigator.vibrate) navigator.vibrate([10,40,10]);
+    toast('Zapisane w notatniku');
+    return;
+  }
+
   const dodane = rozbij(txt).map(dodajZTekstu).filter(Boolean);
   if (!dodane.length) return;
   $('#pole').value = '';
@@ -693,10 +807,21 @@ function zatwierdz(){
 }
 
 /* ---------------- zdarzenia ---------------- */
+$('#podglad').addEventListener('click', e => {
+  const b = e.target.closest('[data-szybko]'); if (!b) return;
+  const pole = $('#pole');
+  pole.value = pole.value.trim() + ' ' + b.dataset.szybko;
+  pokazPodglad(pole.value);
+});
+
 $('#btnDodaj').onclick = zatwierdz;
 $('#btnMic').onclick = mikrofon;
 $('#pole').addEventListener('input', e => pokazPodglad(e.target.value));
 $('#pole').addEventListener('keydown', e => { if (e.key === 'Enter') zatwierdz(); });
+
+function ustawZakladke(nazwa){
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.widok === nazwa));
+}
 
 $('#tabs').addEventListener('click', e => {
   const b = e.target.closest('.tab'); if (!b) return;
@@ -727,6 +852,18 @@ $('#ekran').addEventListener('click', e => {
   const kontener = btn.closest('[data-id]'); if (!kontener) return;
   const id = kontener.dataset.id;
   const a = btn.dataset.akcja;
+  if (a === 'edytujNotke'){ edytujNotke(btn, id); return; }
+  if (a === 'naZadanie'){ notatkaNaZadanie(id); return; }
+  if (a === 'przypnij'){
+    const n = stan.notatki.find(x => x.id === id);
+    if (n){ n.przypiete = !n.przypiete; zapisz(); rysuj(); }
+    return;
+  }
+  if (a === 'usunNotke'){
+    const i = stan.notatki.findIndex(x => x.id === id);
+    if (i >= 0){ stan.notatki.splice(i,1); zapisz(); rysuj(); toast('Notatka usunięta'); }
+    return;
+  }
   if (a === 'edytuj'){ edytuj(btn, id); return; }
   if (a === 'zrobione'){ if (fokus && fokus.id === id) stopFokus(); zrobione(id); }
   else if (a === 'plus') przesun(id, 15);
