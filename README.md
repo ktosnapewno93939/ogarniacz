@@ -107,6 +107,27 @@ apka sama zapisuje po skończeniu zdania. Ponowne kliknięcie kończy nagrywanie
 do Kalendarza/Przypomnień (.ics)". Otwórz pobrany plik na iPhonie — terminy wpadną
 do Kalendarza z alarmem. To najpewniejsza droga, dopóki apka nie jest natywna.
 
+## Moje imiona (gdy dyktowanie przekręca)
+
+Dyktowanie Apple'a myli rzadsze polskie imiona — „Eryk" wychodzi jako „Erica".
+Tego nie da się naprawić w kodzie, bo to silnik Apple'a. Ale apka to prostuje:
+
+Ustawienia → **Moje imiona i słowa** → dopisz „Eryk".
+Od tej pory:
+
+| Dyktowanie usłyszy | Apka zapisze |
+|---|---|
+| „zadzwoń do Erica" | Zadzwoń do **Eryka** |
+| „spotkanie z Ericiem" | Spotkanie z **Erykiem** |
+| „kwiaty dla Malgosia" | Kwiaty dla **Małgosi**a |
+| „napisz do Grzegoż" | Napisz do **Grzegorz**a |
+
+Porównuje „na ucho" (bez ogonków, `y`=`i`, `c`=`k`), więc łapie też odmianę
+i zgubione ogonki. Zwykłe słowa zostawia w spokoju.
+
+**Uczy się sam:** popraw tytuł zadania dotknięciem i podmień jedno słowo —
+apka zapamięta Twoją pisownię i będzie jej używać następnym razem.
+
 ## Kopia danych
 
 Ustawienia → „Zapisz kopię danych (.json)" i „Wczytaj kopię danych".

@@ -256,3 +256,29 @@ input.edycja{
   border-top:1px solid var(--linia);
 }
 .kalDzienNag b{color:var(--akcent)}
+
+/* ---------- moje imiona ---------- */
+.slownikNag{font-size:15px;font-weight:700;margin-bottom:6px}
+.slownikOpis{font-size:13px;color:var(--przygas);line-height:1.5;margin-bottom:12px}
+.slownikDodaj{display:flex;gap:8px;margin-bottom:12px}
+.slownikDodaj input{
+  flex:1;min-width:0;background:var(--karta2);border:1px solid var(--linia);
+  color:var(--tekst);border-radius:11px;padding:11px 12px;font-size:16px;outline:none;
+}
+.slownikDodaj input:focus{border-color:var(--akcent)}
+.slownikDodaj button{
+  border:0;background:var(--akcent);color:#06210f;font-weight:700;
+  border-radius:11px;padding:0 18px;font-size:15px;cursor:pointer;
+}
+.listaSlow{display:flex;flex-wrap:wrap;gap:8px}
+.slowo{
+  display:inline-flex;align-items:center;gap:6px;
+  background:var(--karta2);border:1px solid var(--linia);
+  border-radius:99px;padding:6px 8px 6px 14px;font-size:14px;font-weight:600;
+}
+.slowo button{
+  border:0;background:var(--linia);color:var(--przygas);
+  width:22px;height:22px;border-radius:50%;font-size:14px;line-height:1;cursor:pointer;
+}
+.slowo button:active{background:var(--pilne);color:#1a1004}
+.slownikPusto{font-size:13px;color:var(--przygas)}

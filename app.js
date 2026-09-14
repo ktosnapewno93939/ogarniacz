@@ -14,10 +14,11 @@ function wczytaj(){
       s.zadania.forEach(z => { if (z.kiedy) z.kiedy = new Date(z.kiedy); });
       s.ustawienia = Object.assign({ przed:10, fokus:25 }, s.ustawienia || {});
       s.seria = s.seria || { dzien:null, ile:0 };
+      s.slownik = Array.isArray(s.slownik) ? s.slownik : [];
       return s;
     }
   }catch(e){}
-  return { zadania:[], ustawienia:{ przed:10, fokus:25 }, seria:{ dzien:null, ile:0 } };
+  return { zadania:[], ustawienia:{ przed:10, fokus:25 }, seria:{ dzien:null, ile:0 }, slownik:[] };
 }
 function zapisz(){ localStorage.setItem(KLUCZ, JSON.stringify(stan)); }
 
@@ -59,6 +60,68 @@ function toast(txt){
   el.className = 'toast'; el.textContent = txt;
   document.body.appendChild(el);
   setTimeout(() => el.remove(), 2200);
+}
+
+/* ---------------- moje imiona ----------------
+   Dyktowanie Apple'a przekreca rzadsze polskie imiona ("Eryk" -> "Erica").
+   Apka trzyma liste Twoich slow i prostuje je po dyktowaniu.
+   Porownujemy "na ucho": bez ogonkow, y=i, c=k — wtedy "erica" i "eryk"
+   wygladaja jak "erika" i "erik", a to juz widac jako to samo imie. */
+function fonetyk(s){
+  return s.toLowerCase()
+    .replace(/[ąćęłńóśźż]/g, z => ({'ą':'a','ć':'c','ę':'e','ł':'l','ń':'n','ó':'o','ś':'s','ź':'z','ż':'z'}[z]))
+    .replace(/y/g,'i').replace(/c/g,'k');
+}
+
+function odleglosc(a, b){
+  const m = a.length, n = b.length;
+  let prev = Array.from({length:n+1}, (_,j) => j);
+  for (let i = 1; i <= m; i++){
+    const cur = [i];
+    for (let j = 1; j <= n; j++){
+      cur[j] = Math.min(prev[j] + 1, cur[j-1] + 1, prev[j-1] + (a[i-1] === b[j-1] ? 0 : 1));
+    }
+    prev = cur;
+  }
+  return prev[n];
+}
+
+function poprawSlownikiem(tekst){
+  if (!stan.slownik.length) return { tekst, zmiany: [] };
+  const zmiany = [];
+  const wynik = tekst.replace(/[\p{L}]{3,}/gu, slowo => {
+    const fs = fonetyk(slowo);
+    for (const wzor of stan.slownik){
+      const fw = fonetyk(wzor);
+      // brzmi tak samo — bierzemy Twoja pisownie ("Malgosia" -> "Małgosia")
+      if (fs === fw){
+        if (wzor !== slowo) zmiany.push([slowo, wzor]);
+        return wzor;
+      }
+      // odmiana: "Eryka" przy wzorcu "Eryk" — zostawiamy koncowke
+      if (fs.startsWith(fw) && fs.length - fw.length <= 3){
+        const poprawione = wzor + slowo.slice(wzor.length);
+        if (poprawione !== slowo) zmiany.push([slowo, poprawione]);
+        return poprawione;
+      }
+      // literowka: "Erik" przy wzorcu "Eryk"
+      if (Math.abs(fs.length - fw.length) <= 1 && odleglosc(fs, fw) <= 1){
+        if (wzor !== slowo) zmiany.push([slowo, wzor]);
+        return wzor;
+      }
+    }
+    return slowo;
+  });
+  return { tekst: wynik, zmiany };
+}
+
+function zapamietajSlowo(w){
+  const czyste = w.replace(/[^\p{L}-]/gu, '');
+  if (czyste.length < 3) return false;
+  if (stan.slownik.some(x => fonetyk(x) === fonetyk(czyste))) return false;
+  stan.slownik.push(czyste);
+  zapisz();
+  return true;
 }
 
 /* ---------------- zadania ---------------- */
@@ -150,7 +213,15 @@ function edytuj(el, id){
     if (zamkniete) return;
     zamkniete = true;
     const nowy = inp.value.trim();
-    if (nowy && nowy !== z.tytul){ z.tytul = nowy; zapisz(); }
+    if (nowy && nowy !== z.tytul){
+      // jesli podmieniles jedno slowo na inne — zapamietujemy Twoja pisownie
+      const stareS = z.tytul.split(/\s+/), noweS = nowy.split(/\s+/);
+      const doda = noweS.filter(w => !stareS.includes(w) && /^[\p{Lu}]/u.test(w));
+      z.tytul = nowy; zapisz();
+      if (stareS.length === noweS.length && doda.length === 1 && zapamietajSlowo(doda[0])){
+        toast('Zapamiętam pisownię: ' + doda[0]);
+      }
+    }
     rysuj();
   };
   inp.addEventListener('blur', zapiszTytul);
@@ -495,6 +566,7 @@ function pobierz(nazwa, tresc, typ){
    Klikasz raz, mowisz, apka sama zapisuje. Klikniecie w trakcie = koniec. */
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 let rozpoznawanie = null, sluchaTeraz = false, celowoStop = false, cosUslyszano = false;
+let ostatniePoprawki = [];
 
 function inicjujGlos(){
   if (!SR) return null;
@@ -514,8 +586,10 @@ function inicjujGlos(){
     let txt = '';
     for (let i = 0; i < e.results.length; i++) txt += e.results[i][0].transcript;
     if (txt.trim()) cosUslyszano = true;
-    $('#pole').value = txt;
-    pokazPodglad(txt);
+    const pop = poprawSlownikiem(txt);
+    if (pop.zmiany.length) ostatniePoprawki = pop.zmiany;
+    $('#pole').value = pop.tekst;
+    pokazPodglad(pop.tekst);
   };
 
   r.onerror = (e) => {
@@ -607,7 +681,10 @@ function zatwierdz(){
   $('#podglad').classList.add('ukryty');
   rysuj();
   if (navigator.vibrate) navigator.vibrate([10,40,10]);
-  if (dodane.length === 1){
+  if (ostatniePoprawki.length){
+    toast('Poprawione: ' + ostatniePoprawki.map(z => z[1]).join(', '));
+    ostatniePoprawki = [];
+  } else if (dodane.length === 1){
     const z = dodane[0];
     toast(z.kiedy ? 'Zapisane: ' + ludzkaData(z) : 'Wrzucone do skrzynki');
   } else {
@@ -660,7 +737,34 @@ $('#ekran').addEventListener('click', e => {
 });
 
 /* ---------------- ustawienia ---------------- */
+function rysujSlownik(){
+  const el = $('#listaSlow');
+  if (!el) return;
+  if (!stan.slownik.length){
+    el.innerHTML = '<div class="slownikPusto">Jeszcze nic. Dodaj imiona, ktore dyktowanie przekreca.</div>';
+    return;
+  }
+  el.innerHTML = stan.slownik.map((w, i) =>
+    '<span class="slowo">' + esc(w) + '<button data-slowo="' + i + '">\u00d7</button></span>'
+  ).join('');
+}
+
+$('#listaSlow').addEventListener('click', e => {
+  const b = e.target.closest('[data-slowo]'); if (!b) return;
+  stan.slownik.splice(+b.dataset.slowo, 1);
+  zapisz(); rysujSlownik();
+});
+
+$('#btnSlowo').onclick = () => {
+  const w = $('#inpSlowo').value.trim();
+  if (!w) return;
+  if (zapamietajSlowo(w)) { $('#inpSlowo').value = ''; rysujSlownik(); }
+  else toast('Juz to znam');
+};
+$('#inpSlowo').addEventListener('keydown', e => { if (e.key === 'Enter') $('#btnSlowo').click(); });
+
 $('#btnUstawienia').onclick = () => {
+  rysujSlownik();
   $('#selPrzed').value = String(stan.ustawienia.przed);
   $('#selFokus').value = String(stan.ustawienia.fokus);
   $('#btnPowiadomienia').textContent =
