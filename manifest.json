@@ -1,0 +1,14 @@
+{
+  "name": "Ogarniacz",
+  "short_name": "Ogarniacz",
+  "description": "Głosowy asystent zadań dla głowy, która pamięta wszystko naraz i nic po kolei.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0f1115",
+  "theme_color": "#0f1115",
+  "lang": "pl",
+  "icons": [
+    { "src": "icon.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

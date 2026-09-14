@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f1115">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Ogarniacz">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="stylesheet" href="styles.css">
+<title>Ogarniacz</title>
+</head>
+<body>
+
+<header class="top">
+  <div class="tabs" id="tabs">
+    <button class="tab active" data-widok="teraz">Teraz</button>
+    <button class="tab" data-widok="dzis">Dziś</button>
+    <button class="tab" data-widok="wszystko">Wszystko</button>
+  </div>
+  <button id="btnUstawienia" class="ikonka" title="Ustawienia">⚙</button>
+</header>
+
+<main id="ekran"></main>
+
+<div id="podglad" class="podglad ukryty"></div>
+
+<footer class="wrzut">
+  <button id="btnMic" class="mic" aria-label="Dyktuj">
+    <span class="micIkona">🎙</span>
+    <span class="micPuls"></span>
+  </button>
+  <input id="pole" type="text" autocomplete="off" autocorrect="on"
+         placeholder="Powiedz albo wpisz: „zadzwoń do Marka jutro o 15”">
+  <button id="btnDodaj" class="dodaj" aria-label="Dodaj">➜</button>
+</footer>
+
+<div id="modal" class="modal ukryty">
+  <div class="modalBox">
+    <h2>Ustawienia</h2>
+    <label class="wiersz">
+      <span>Powiadomienia w tej przeglądarce</span>
+      <button id="btnPowiadomienia" class="maly">Włącz</button>
+    </label>
+    <label class="wiersz">
+      <span>Przypominaj ile minut przed</span>
+      <select id="selPrzed">
+        <option value="0">w momencie</option>
+        <option value="5">5 min</option>
+        <option value="10" selected>10 min</option>
+        <option value="15">15 min</option>
+        <option value="30">30 min</option>
+        <option value="60">1 godz</option>
+      </select>
+    </label>
+    <label class="wiersz">
+      <span>Domyślna długość fokusa</span>
+      <select id="selFokus">
+        <option value="10">10 min</option>
+        <option value="15">15 min</option>
+        <option value="25" selected>25 min</option>
+        <option value="45">45 min</option>
+      </select>
+    </label>
+    <hr>
+    <button id="btnIcsWszystko" class="szeroki">Wyślij wszystkie terminy do Kalendarza/Przypomnień (.ics)</button>
+    <button id="btnEksport" class="szeroki">Zapisz kopię danych (.json)</button>
+    <label class="szeroki plikBtn">Wczytaj kopię danych
+      <input id="inpImport" type="file" accept="application/json" hidden>
+    </label>
+    <hr>
+    <button id="btnZamknij" class="szeroki glowny">Zamknij</button>
+  </div>
+</div>
+
+<script src="parser.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
