@@ -557,5 +557,24 @@ $('#inpImport').onchange = e => {
 };
 
 /* ---------------- start ---------------- */
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+if ('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js').then(reg => {
+    // nowa wersja wgrana ze skryptu wgraj.sh — bierzemy ja od razu
+    reg.addEventListener('updatefound', () => {
+      const nowy = reg.installing;
+      if (!nowy) return;
+      nowy.addEventListener('statechange', () => {
+        if (nowy.state === 'installed' && navigator.serviceWorker.controller){
+          nowy.postMessage('odswiez');
+          toast('Nowa wersja — odświeżam');
+          setTimeout(() => location.reload(), 900);
+        }
+      });
+    });
+    // sprawdzaj przy kazdym powrocie do apki
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) reg.update().catch(() => {});
+    });
+  }).catch(() => {});
+}
 rysuj();
