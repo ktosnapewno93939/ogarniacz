@@ -54,6 +54,23 @@ Mówisz normalnie, po polsku — aplikacja sama wyciąga termin, godzinę i kate
 | „wizyta o dziewiątej trzydzieści" | 9:30 |
 | „za dwadzieścia minut wyjść" | za 20 minut |
 
+### Wycina rozbieg
+
+Mówisz tak, jak myślisz — z rozbiegiem. Apka zostawia samo mięso:
+
+| Powiesz | Zapisze |
+|---|---|
+| „**przypomniało mi się dzisiaj** ogarnąć sprzątanie" | Ogarnąć sprzątanie — dziś |
+| „**przypomniało mi się że muszę** zadzwonić do Marka o piętnastej" | Zadzwonić do Marka — 15:00 |
+| „**mam pamiętać że mam** założyć spółkę" | Założyć spółkę → notatnik |
+| „**muszę jeszcze** wysłać galerię jutro" | Wysłać galerię — jutro |
+| „**a właśnie** kup mleko" | Kup mleko |
+
+Wycina m.in.: „przypomniało mi się", „muszę", „trzeba", „mam", „powinienem",
+„żeby nie zapomnieć", „nie zapomnij", „chciałem", „a właśnie", „przy okazji",
+„jeszcze", „do zrobienia". Jeśli po wycięciu nie zostałoby nic —
+zostawia zdanie w całości.
+
 Rozumie też: dziś / jutro / pojutrze / pojedyncze dni tygodnia / „w przyszły wtorek" /
 „w weekend" / „za 2 godziny" / „za tydzień" / daty (3 października, 20.09) /
 pory dnia (rano, po południu, wieczorem, w nocy).

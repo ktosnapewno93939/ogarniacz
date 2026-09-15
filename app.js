@@ -201,11 +201,11 @@ function czyNotatka(tekst){
 }
 
 function dodajNotatke(tekst){
-  const czysty = tekst.replace(SLOWA_NOTATKI, '').trim();
+  const czysty = oczyscTytul(tekst.replace(SLOWA_NOTATKI, '').trim());
   if (!czysty) return null;
   const n = {
     id: Date.now() + '-' + Math.random().toString(36).slice(2,7),
-    tresc: czysty.charAt(0).toUpperCase() + czysty.slice(1),
+    tresc: czysty,
     przypiete: false,
     utworzone: new Date().toISOString()
   };

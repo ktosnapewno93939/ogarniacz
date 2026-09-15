@@ -110,6 +110,44 @@ function norm(s){
 
 function startOfDay(d){ const x = new Date(d); x.setHours(0,0,0,0); return x; }
 
+/* --- wycinanie rozbiegu ---
+   Mowi sie "przypomnialo mi sie ze musze jeszcze ogarnac sprzatanie".
+   Zadaniem jest "ogarnac sprzatanie" — reszta to rozbieg, ktory tylko
+   zasmieca liste i utrudnia skanowanie wzrokiem.
+   Kolejnosc ma znaczenie: dluzsze frazy przed krotszymi. */
+const WYPELNIACZE = [
+  'wlasnie mi sie przypomnialo ze','wlasnie mi sie przypomnialo',
+  'przypomnialo mi sie ze','przypomnialo mi sie','przypomnial mi sie',
+  'przypominam sobie ze','przypomina mi sie ze','przypomina mi sie',
+  'mam pamietac o tym ze','mam pamietac ze','musze pamietac ze','musze pamietac o',
+  'zeby nie zapomniec ze','zeby nie zapomniec o','zeby nie zapomniec',
+  'nie zapomniec o','nie zapomniec','nie zapomnij o','nie zapomnij',
+  'mam do zrobienia','do zrobienia','mam jeszcze','musze jeszcze','trzeba jeszcze',
+  'musze koniecznie','trzeba koniecznie',
+  'chcialbym','chcialem','chce jeszcze',
+  'powinienem','powinnam','wypadaloby','nalezy',
+  'a wlasnie','wlasnie','przy okazji','tak przy okazji','no i jeszcze','no i','aha',
+  'musze','trzeba by','trzeba','mam','jeszcze','zeby','ze','o tym'
+];
+
+function oczyscTytul(tytul){
+  let biezacy = String(tytul).replace(/\s+/g,' ').trim();
+  for (let krok = 0; krok < 6; krok++){
+    const low = bezOgonkow(biezacy.toLowerCase());
+    let uciete = false;
+    for (const w of WYPELNIACZE){
+      if (low === w) return biezacy;                 // zostaloby pusto — zostawiamy
+      if (low.startsWith(w + ' ')){
+        const reszta = biezacy.slice(w.length).replace(/^[\s,.:;–—-]+/, '');
+        if (!reszta) return biezacy;
+        biezacy = reszta; uciete = true; break;
+      }
+    }
+    if (!uciete) break;
+  }
+  return biezacy.charAt(0).toUpperCase() + biezacy.slice(1);
+}
+
 // zwraca { tytul, kiedy, maGodzine, kategoria, ikona, pilne, trwanie, powtarzanie, niepewne }
 function parsuj(tekst, teraz){
   teraz = teraz || new Date();
@@ -328,10 +366,10 @@ function parsuj(tekst, teraz){
                .replace(/^do zrobienia\s+/i, '')
                .trim();
   if (!tytul) tytul = kompakt;
-  tytul = tytul.charAt(0).toUpperCase() + tytul.slice(1);
+  tytul = oczyscTytul(tytul);
 
   return { tytul, kiedy, maGodzine, kategoria, ikona, pilne, trwanie, powtarzanie, niepewne, surowy: oryg };
 }
 
-if (typeof module !== 'undefined') module.exports = { parsuj };
-if (typeof window !== 'undefined') window.parsuj = parsuj;
+if (typeof module !== 'undefined') module.exports = { parsuj, oczyscTytul };
+if (typeof window !== 'undefined'){ window.parsuj = parsuj; window.oczyscTytul = oczyscTytul; }
