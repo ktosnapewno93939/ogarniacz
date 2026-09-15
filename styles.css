@@ -7,6 +7,12 @@
   --akcent:#4ade80;
   --akcent2:#22c55e;
   --pilne:#fb923c;
+  /* skala pilnosci: im blizej, tym glosniej. Nic nie jest czerwone —
+     czerwien uruchamia wstyd, a wstyd konczy sie unikaniem apki. */
+  --spokoj:#3f4855;
+  --dzis:#60a5fa;
+  --teraz:#fbbf24;
+  --wisi:#fb923c;
   --linia:#333b47;
   --r:16px;
 }
@@ -54,20 +60,32 @@ h2.sekcja:first-child{margin-top:4px}
 
 /* ---------- karta zadania ---------- */
 .zad{
-  display:flex;align-items:center;gap:12px;
+  display:flex;align-items:center;gap:10px;
   background:var(--karta);border-radius:var(--r);
-  padding:12px 14px;margin-bottom:10px;
+  padding:10px 8px 10px 12px;margin-bottom:10px;
   border:1px solid var(--linia);
   border-left:4px solid var(--linia);
 }
-.zad.pilne{border-left-color:var(--pilne)}
-.zad.zaraz{border-left-color:var(--akcent)}
-.zad.poTerminie{border-left-color:#f87171}
+.zad.stan-spokoj{border-left-color:var(--spokoj);opacity:.82}
+.zad.stan-dzis{border-left-color:var(--dzis)}
+.zad.stan-teraz{border-left-color:var(--teraz);background:#1f2129}
+.zad.stan-wisi{border-left-color:var(--wisi);background:#221e1c}
+.zad.zrobione{border-left-color:var(--akcent2);opacity:.5}
+
+/* rzecz, ktora naprawde wisi, delikatnie oddycha — widac ja katem oka,
+   ale nie miga i nie krzyczy */
+@keyframes oddech{0%,100%{box-shadow:0 0 0 0 rgba(251,146,60,0)}50%{box-shadow:0 0 0 3px rgba(251,146,60,.13)}}
+.zad.stan-wisi{animation:oddech 2.6s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){.zad.stan-wisi{animation:none}}
+
+/* blysk po odhaczeniu — natychmiastowa informacja zwrotna */
+@keyframes blysk{0%{background:rgba(74,222,128,.32);transform:scale(1.015)}100%{background:var(--karta);transform:scale(1)}}
+.zad.blysk{animation:blysk .55s ease-out}
 
 /* godzina — osobna kolumna, zeby dalo sie skanowac wzrokiem */
 .czas{
-  flex:0 0 58px;text-align:center;line-height:1.15;
-  padding-right:12px;border-right:1px solid var(--linia);
+  flex:0 0 52px;text-align:center;line-height:1.15;
+  padding-right:10px;border-right:1px solid var(--linia);
 }
 .czas b{display:block;font-size:19px;font-weight:700;
   font-variant-numeric:tabular-nums;letter-spacing:-.5px;color:var(--tekst)}
@@ -78,13 +96,19 @@ h2.sekcja:first-child{margin-top:4px}
 .zad.zaraz .czas b{color:var(--akcent)}
 .zad.poTerminie .czas b{color:#f87171}
 .ptak{
-  flex:0 0 26px;height:26px;margin-top:1px;border-radius:9px;
+  flex:0 0 44px;height:44px;border-radius:13px;
   border:2px solid var(--linia);background:transparent;cursor:pointer;
   display:flex;align-items:center;justify-content:center;color:transparent;
-  font-size:15px;transition:.15s;
+  font-size:22px;transition:.15s;
 }
+.zad.stan-teraz .ptak{border-color:var(--teraz)}
+.zad.stan-wisi .ptak{border-color:var(--wisi)}
 .ptak:active{transform:scale(.88)}
 .zad.zrobione .ptak{background:var(--akcent);border-color:var(--akcent);color:#06210f}
+.zad.stan-teraz .czas b{color:var(--teraz)}
+.zad.stan-wisi .czas b{color:var(--wisi)}
+.zad.stan-dzis .czas b{color:var(--dzis)}
+.zad.stan-spokoj .czas b{color:var(--przygas)}
 .zad.zrobione .tresc{opacity:.45;text-decoration:line-through}
 .tresc{flex:1;min-width:0}
 .tytul{font-weight:600;font-size:16px;line-height:1.3;word-wrap:break-word}
@@ -96,7 +120,7 @@ h2.sekcja:first-child{margin-top:4px}
 .akcje{display:flex;flex-direction:column;gap:6px}
 .mini{
   border:0;background:var(--karta2);color:var(--przygas);
-  border-radius:9px;width:32px;height:28px;font-size:13px;cursor:pointer;
+  border-radius:11px;min-width:44px;height:40px;font-size:16px;cursor:pointer;
 }
 .mini:active{background:var(--linia)}
 
@@ -312,8 +336,8 @@ input.edycja{
   border-top:1px solid var(--linia);
 }
 .notkaData{font-size:12px;color:var(--przygas)}
-.notkaBtny{display:flex;gap:6px}
-.mini.szeroka{width:auto;padding:0 11px;font-size:12px;font-weight:600}
+.notkaBtny{display:flex;gap:8px}
+.mini.szeroka{min-width:auto;padding:0 16px;font-size:14px;font-weight:600}
 textarea.edycjaNotki{
   width:100%;background:var(--karta2);border:1px solid var(--akcent);
   color:var(--tekst);border-radius:10px;padding:10px 12px;
@@ -346,4 +370,66 @@ textarea.edycjaNotki{
 .dpNotka{
   border:1px solid var(--linia);background:transparent;color:var(--przygas);
   border-radius:12px;padding:12px 14px;font-size:14px;font-weight:600;cursor:pointer;
+}
+
+/* ---------- duzy przycisk "wiecej" zamiast trzech kwadracikow ---------- */
+.wiecej{
+  flex:0 0 44px;height:44px;border:0;background:transparent;
+  color:var(--przygas);font-size:22px;line-height:1;
+  border-radius:13px;cursor:pointer;
+}
+.wiecej:active{background:var(--karta2)}
+
+/* ---------- menu zadania: wiersze na caly palec ---------- */
+.menuBox{
+  width:100%;background:var(--karta);border-radius:22px 22px 0 0;
+  padding:18px 14px calc(14px + env(safe-area-inset-bottom));
+}
+.menuTytul{font-size:17px;font-weight:700;padding:0 6px;line-height:1.3}
+.menuData{font-size:13px;color:var(--przygas);padding:2px 6px 14px;
+  border-bottom:1px solid var(--linia);margin-bottom:10px}
+.menuRzad{
+  display:block;width:100%;text-align:left;
+  background:transparent;border:0;color:var(--tekst);
+  font-size:17px;font-family:inherit;padding:16px 14px;
+  border-radius:13px;cursor:pointer;
+}
+.menuRzad:active{background:var(--karta2)}
+.menuRzad.grozny{color:var(--wisi)}
+.menuRzad.anuluj{
+  text-align:center;font-weight:700;background:var(--karta2);
+  margin-top:8px;color:var(--przygas);
+}
+
+/* ---------- pasek postepu dnia ---------- */
+.postep{
+  background:var(--karta);border:1px solid var(--linia);
+  border-radius:var(--r);padding:14px 16px;margin-bottom:14px;
+}
+.postepGora{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px}
+.postepGora b{font-size:20px;font-variant-numeric:tabular-nums}
+.postepGora span{font-size:13px;color:var(--przygas)}
+.postepTor{height:9px;background:var(--karta2);border-radius:99px;overflow:hidden}
+.postepTor i{
+  display:block;height:100%;border-radius:99px;
+  background:linear-gradient(90deg,var(--akcent2),var(--akcent));
+  transition:width .5s cubic-bezier(.22,1,.36,1);
+}
+
+/* ---------- toast sukcesu ---------- */
+@keyframes wskocz{from{transform:translateX(-50%) translateY(14px) scale(.9);opacity:0}
+                  to{transform:translateX(-50%) translateY(0) scale(1);opacity:1}}
+.toast{animation:wskocz .28s cubic-bezier(.22,1,.36,1)}
+.toast.sukces{font-size:16px;padding:13px 22px}
+
+/* ---------- wlasna godzina w dopytaniu ---------- */
+.dpWlasna{
+  position:relative;display:inline-flex;align-items:center;
+  border:1px solid var(--linia);background:var(--karta2);color:var(--tekst);
+  border-radius:99px;padding:8px 13px;font-size:14px;font-weight:600;cursor:pointer;
+}
+.dpWlasna.wybrane{background:var(--akcent);color:#06210f;border-color:var(--akcent)}
+.dpWlasna input{
+  position:absolute;inset:0;opacity:0;width:100%;height:100%;
+  border:0;cursor:pointer;font-family:inherit;
 }

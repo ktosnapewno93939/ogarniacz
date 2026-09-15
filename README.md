@@ -111,9 +111,25 @@ notatki czekają spokojnie, aż sam zdecydujesz, że to robisz.
 
 ### Przyciski przy zadaniu
 
-- `✓` zrobione (jeśli powtarzalne — samo tworzy następne)
-- `+15` przesuń o kwadrans (bez poczucia winy, to jest normalne)
-- `✕` usuń
+- duży `✓` po lewej — zrobione (jeśli powtarzalne, samo tworzy następne)
+- `⋯` po prawej — menu z dużymi wierszami: przełóż o 15 minut / o godzinę /
+  na jutro, przenieś do notatnika, usuń
+
+Wszystkie pola dotyku mają minimum 44 px, bo mniejsze to loteria —
+zwłaszcza w ruchu. „Usuń" leży osobno na dole menu, daleko od „Zrobione".
+
+### Kolory — skala, nie alarm
+
+| Stan | Kolor | Znaczenie |
+|---|---|---|
+| dalej niż jutro | szary, przygaszony | cicho, nie zawraca głowy |
+| dziś / jutro | niebieski | jest na radarze |
+| w ciągu godziny albo pilne | bursztynowy | rusz się |
+| po terminie | pomarańczowy, lekko oddycha | wisi |
+| zrobione | zielony, przygaszone | z głowy |
+
+Nic nie jest czerwone. Czerwień uruchamia wstyd, wstyd kończy się unikaniem
+aplikacji — a apka, której się unika, nie działa wcale.
 
 ## Dlaczego tak, a nie inaczej (pod ADHD)
 

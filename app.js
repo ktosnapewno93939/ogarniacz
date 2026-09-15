@@ -65,9 +65,9 @@ function trwanieTxt(min){
   return h + ' godz' + (m ? ' ' + m + ' min' : '');
 }
 
-function toast(txt){
+function toast(txt, rodzaj){
   const el = document.createElement('div');
-  el.className = 'toast'; el.textContent = txt;
+  el.className = 'toast' + (rodzaj ? ' ' + rodzaj : ''); el.textContent = txt;
   document.body.appendChild(el);
   setTimeout(() => el.remove(), 2200);
 }
@@ -139,7 +139,7 @@ function zapamietajSlowo(w){
    uzytkownika konczy sie zadaniem w zlym dniu, ktoremu przestaje sie ufac.
    Wiec apka nie zgaduje — pokazuje dni do wyboru i czeka jedno dotkniecie. */
 let kolejkaPytan = [];
-let wybor = { ts:null, godz:null };
+let wybor = { ts:null, godz:null, wlasna:null };
 
 function pokazDoprecyzowanie(){
   const el = $('#doprecyzuj');
@@ -160,7 +160,11 @@ function pokazDoprecyzowanie(){
 
   const godziny = [['','cały dzień'],['9','9:00'],['12','12:00'],['15','15:00'],['18','18:00']]
     .map(([v,lab]) => '<button data-godzw="' + v + '"' +
-      ((wybor.godz || '') === v ? ' class="wybrane"' : '') + '>' + lab + '</button>').join('');
+      ((wybor.godz || '') === v ? ' class="wybrane"' : '') + '>' + lab + '</button>').join('') +
+    '<label class="dpWlasna' + (wybor.wlasna ? ' wybrane' : '') + '">' +
+      (wybor.wlasna ? wybor.wlasna : 'inna…') +
+      '<input type="time" id="dpCzas" value="' + (wybor.wlasna || '') + '">' +
+    '</label>';
 
   el.innerHTML =
     '<div class="dpNag">Kiedy dokładnie?' +
@@ -178,7 +182,7 @@ function pokazDoprecyzowanie(){
 
 function zamknijDoprecyzowanie(){
   kolejkaPytan.shift();
-  wybor = { ts:null, godz:null };
+  wybor = { ts:null, godz:null, wlasna:null };
   if (kolejkaPytan.length) pokazDoprecyzowanie();
   else { $('#doprecyzuj').classList.add('ukryty'); $('#doprecyzuj').innerHTML = ''; }
 }
@@ -256,6 +260,7 @@ function zrobione(id){
   z.zrobione = !z.zrobione;
   if (z.zrobione){
     liczSerie();
+    nagroda(z);
     if (z.powtarzanie && z.kiedy){
       const n = Object.assign({}, z, {
         id: Date.now() + '-' + Math.random().toString(36).slice(2,7),
@@ -268,6 +273,21 @@ function zrobione(id){
     }
   }
   zapisz(); rysuj();
+}
+
+/* Nagroda musi przyjsc NATYCHMIAST po dotknieciu — z opoznieniem mozg
+   przestaje ja laczyc z wykonana rzecza i cala petla nie dziala. */
+const POCHWALY = ['Jest.','Zrobione.','Ładnie.','Poszło.','Odhaczone.','Z głowy.','Dobra robota.','Kolejne z listy.'];
+
+function nagroda(z){
+  if (navigator.vibrate) navigator.vibrate([12, 30, 45]);
+  const ileDzis = stan.seria.dzien === dzisiaj() ? stan.seria.ile : 1;
+  let txt = POCHWALY[Math.floor(Math.random() * POCHWALY.length)];
+  if (ileDzis >= 3) txt += '  ' + ileDzis + '. dziś';
+  toast(txt, 'sukces');
+
+  const karta = document.querySelector('[data-id="' + z.id + '"]');
+  if (karta) karta.classList.add('blysk');
 }
 
 function liczSerie(){
@@ -350,6 +370,26 @@ function zadanieNaNotatke(id){
   toast('Przeniesione do notatnika');
 }
 
+/* Duze wiersze zamiast malych kwadracikow — palec trafia w to, co chce,
+   a "Usuń" jest osobno na dole, zeby nie sasiadowalo z "Zrobione". */
+function pokazMenu(id){
+  const z = stan.zadania.find(x => x.id === id);
+  if (!z) return;
+  const el = $('#menuZad');
+  el.innerHTML =
+    '<div class="menuBox" data-id="' + id + '">' +
+      '<div class="menuTytul">' + esc(z.tytul) + '</div>' +
+      '<div class="menuData">' + (ludzkaData(z) || '') + '</div>' +
+      '<button class="menuRzad" data-m="15">Przełóż o 15 minut</button>' +
+      '<button class="menuRzad" data-m="60">Przełóż o godzinę</button>' +
+      '<button class="menuRzad" data-m="jutro">Przełóż na jutro</button>' +
+      '<button class="menuRzad" data-m="notatnik">Przenieś do notatnika</button>' +
+      '<button class="menuRzad grozny" data-m="usun">Usuń zadanie</button>' +
+      '<button class="menuRzad anuluj" data-m="zamknij">Anuluj</button>' +
+    '</div>';
+  el.classList.remove('ukryty');
+}
+
 function usun(id){
   const i = stan.zadania.findIndex(x => x.id === id);
   if (i >= 0){ stan.zadania.splice(i,1); zapisz(); rysuj(); toast('Usunięte'); }
@@ -378,14 +418,29 @@ function coTeraz(){
   return otwarte.slice().sort((a,b) => punkty(b) - punkty(a))[0];
 }
 
+/* ---------------- ile to pali ----------------
+   Cztery poziomy zamiast jednego alarmu. Mozg z ADHD nie odroznia
+   "za tydzien" od "za godzine", jesli oba wygladaja tak samo — a gdy
+   wszystko krzyczy, przestaje sie reagowac na cokolwiek. Wiec rzeczy
+   odlegle sa celowo ciche, a glosnieja dopiero gdy naprawde sie zbliza. */
+function pilnosc(z){
+  if (z.zrobione) return 'zrobione';
+  const teraz = new Date();
+  const minDo = z.maGodzine ? (new Date(z.kiedy) - teraz) / 60000 : null;
+  const dniDo = Math.round((dzien(z.kiedy) - dzisiaj()) / 86400000);
+
+  if (dniDo < 0 || (minDo !== null && minDo < 0)) return 'wisi';    // po terminie
+  if (minDo !== null && minDo <= 60) return 'teraz';                // w ciagu godziny
+  if (dniDo === 0) return z.pilne ? 'teraz' : 'dzis';
+  if (dniDo === 1) return 'dzis';
+  return 'spokoj';                                                  // dalej niz jutro
+}
+
 /* ---------------- render ---------------- */
 function kartaHTML(z){
   const bliskoTxt = zaIle(z);
-  const klasy = ['zad'];
+  const klasy = ['zad', 'stan-' + pilnosc(z)];
   if (z.zrobione) klasy.push('zrobione');
-  if (z.pilne) klasy.push('pilne');
-  if (bliskoTxt && bliskoTxt.spoznione) klasy.push('poTerminie');
-  else if (bliskoTxt) klasy.push('zaraz');
 
   // godzina jako osobna, mocna kolumna — najlatwiej zlapac wzrokiem
   let czas;
@@ -415,11 +470,8 @@ function kartaHTML(z){
     '<div class="tresc"><div class="tytul" data-akcja="edytuj" title="Dotknij, żeby poprawić">' + esc(z.tytul) + '</div>' +
       (meta.length ? '<div class="meta">' + meta.join('') + '</div>' : '') +
     '</div>' +
-    '<div class="akcje">' +
-      '<button class="mini" data-akcja="plus" title="+15 min">+15</button>' +
-      '<button class="mini" data-akcja="doNotatnika" title="Do notatnika">📝</button>' +
-      '<button class="mini" data-akcja="usun" title="Usuń">✕</button>' +
-    '</div></div>';
+    '<button class="wiecej" data-akcja="menu" aria-label="Więcej">⋯</button>' +
+    '</div>';
 }
 function esc(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
@@ -556,10 +608,20 @@ function widokTeraz(){
   const naDzis = stan.zadania.filter(x => !x.zrobione && x.kiedy && dzien(x.kiedy) <= dzisiaj()).length;
   const ileNotatek = stan.notatki.length;
 
-  let html = '<div class="licznik">' +
-    '<div class="licznikBox"><b>' + naDzis + '</b><span>na dziś</span></div>' +
-    '<div class="licznikBox"><b>' + ileNotatek + '</b><span>w notatniku</span></div>' +
-    '<div class="licznikBox"><b>' + (stan.seria.dzien === dzisiaj() ? stan.seria.ile : 0) + '</b><span>zrobione dziś</span></div>' +
+  const zrobioneDzis = stan.zadania.filter(x => x.zrobione && dzien(x.kiedy) === dzisiaj()).length;
+  const razem = naDzis + zrobioneDzis;
+  const proc = razem ? Math.round(zrobioneDzis / razem * 100) : 0;
+
+  /* Widoczny postep to najtanszy zastrzyk dopaminy, jaki apka moze dac.
+     Liczba "0 zrobionych" nie motywuje — pasek, ktory rosnie, motywuje. */
+  let html = '<div class="postep">' +
+    '<div class="postepGora">' +
+      '<b>' + zrobioneDzis + ' z ' + razem + '</b>' +
+      '<span>' + (razem === 0 ? 'nic na dziś' :
+                  proc === 100 ? 'dzień zamknięty' :
+                  proc >= 50 ? 'ponad połowa za Tobą' : 'idziesz') + '</span>' +
+    '</div>' +
+    '<div class="postepTor"><i style="width:' + proc + '%"></i></div>' +
     '</div>';
 
   html += '<div id="timerMiejsce"></div>';
@@ -916,12 +978,34 @@ function zatwierdz(){
 }
 
 /* ---------------- zdarzenia ---------------- */
+$('#menuZad').addEventListener('click', e => {
+  const box = $('#menuZad').querySelector('.menuBox');
+  const b = e.target.closest('[data-m]');
+  if (!b){ if (!e.target.closest('.menuBox')) $('#menuZad').classList.add('ukryty'); return; }
+  const id = box.dataset.id;
+  const co = b.dataset.m;
+  $('#menuZad').classList.add('ukryty');
+  if (co === '15') przesun(id, 15);
+  else if (co === '60') przesun(id, 60);
+  else if (co === 'jutro') naJutro(id);
+  else if (co === 'notatnik') zadanieNaNotatke(id);
+  else if (co === 'usun') usun(id);
+});
+
+document.addEventListener('change', e => {
+  if (e.target && e.target.id === 'dpCzas'){
+    wybor.wlasna = e.target.value || null;
+    wybor.godz = null;
+    pokazDoprecyzowanie();
+  }
+});
+
 $('#doprecyzuj').addEventListener('click', e => {
   const d = e.target.closest('[data-dzienw]');
   if (d){ wybor.ts = +d.dataset.dzienw; pokazDoprecyzowanie(); return; }
 
   const g = e.target.closest('[data-godzw]');
-  if (g){ wybor.godz = g.dataset.godzw; pokazDoprecyzowanie(); return; }
+  if (g){ wybor.godz = g.dataset.godzw; wybor.wlasna = null; pokazDoprecyzowanie(); return; }
 
   const b = e.target.closest('[data-dp]');
   if (!b) return;
@@ -937,9 +1021,15 @@ $('#doprecyzuj').addEventListener('click', e => {
   if (b.dataset.dp === 'zapisz'){
     if (!wybor.ts) return;
     const termin = new Date(wybor.ts);
-    if (wybor.godz) termin.setHours(+wybor.godz, 0, 0, 0);
+    let zGodzina = false;
+    if (wybor.wlasna){
+      const [hh, mm] = wybor.wlasna.split(':');
+      termin.setHours(+hh, +mm, 0, 0); zGodzina = true;
+    } else if (wybor.godz){
+      termin.setHours(+wybor.godz, 0, 0, 0); zGodzina = true;
+    }
     const z = dodajZTekstu(kolejkaPytan[0], termin);
-    if (z && wybor.godz){ z.kiedy = termin; z.maGodzine = true; zapisz(); }
+    if (z && zGodzina){ z.kiedy = termin; z.maGodzine = true; zapisz(); }
     zamknijDoprecyzowanie();
     rysuj();
     if (navigator.vibrate) navigator.vibrate([10,40,10]);
@@ -992,6 +1082,7 @@ $('#ekran').addEventListener('click', e => {
   const kontener = btn.closest('[data-id]'); if (!kontener) return;
   const id = kontener.dataset.id;
   const a = btn.dataset.akcja;
+  if (a === 'menu'){ pokazMenu(id); return; }
   if (a === 'doNotatnika'){ zadanieNaNotatke(id); return; }
   if (a === 'edytujNotke'){ edytujNotke(btn, id); return; }
   if (a === 'naZadanie'){ notatkaNaZadanie(id); return; }
