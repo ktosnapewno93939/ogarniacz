@@ -320,3 +320,30 @@ textarea.edycjaNotki{
   font-size:16px;line-height:1.5;font-family:inherit;
   outline:none;resize:none;min-height:60px;
 }
+
+/* ---------- asystent dopytuje o termin ---------- */
+.doprecyzuj{
+  margin:0 12px 8px;padding:14px;border-radius:16px;
+  background:var(--karta);border:1px solid var(--akcent);
+}
+.dpNag{font-size:12px;font-weight:700;color:var(--akcent);
+  text-transform:uppercase;letter-spacing:.07em}
+.dpNag span{color:var(--przygas);font-weight:600;text-transform:none;letter-spacing:0}
+.dpTytul{font-size:17px;font-weight:600;margin:6px 0 12px;line-height:1.3}
+.dpRzad{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.dpRzad button{
+  border:1px solid var(--linia);background:var(--karta2);color:var(--tekst);
+  border-radius:99px;padding:8px 13px;font-size:14px;font-weight:600;
+  cursor:pointer;font-family:inherit;
+}
+.dpRzad button.wybrane{background:var(--akcent);color:#06210f;border-color:var(--akcent)}
+.dpAkcje{display:flex;gap:8px;margin-top:12px}
+.dpZapisz{
+  flex:1;border:0;background:var(--akcent);color:#06210f;
+  border-radius:12px;padding:12px;font-size:15px;font-weight:700;cursor:pointer;
+}
+.dpZapisz:disabled{background:var(--karta2);color:var(--przygas);cursor:default}
+.dpNotka{
+  border:1px solid var(--linia);background:transparent;color:var(--przygas);
+  border-radius:12px;padding:12px 14px;font-size:14px;font-weight:600;cursor:pointer;
+}

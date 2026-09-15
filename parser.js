@@ -110,7 +110,7 @@ function norm(s){
 
 function startOfDay(d){ const x = new Date(d); x.setHours(0,0,0,0); return x; }
 
-// zwraca { tytul, kiedy, maGodzine, kategoria, ikona, pilne, trwanie, powtarzanie }
+// zwraca { tytul, kiedy, maGodzine, kategoria, ikona, pilne, trwanie, powtarzanie, niepewne }
 function parsuj(tekst, teraz){
   teraz = teraz || new Date();
   const oryg = String(tekst || '').trim();
@@ -121,6 +121,16 @@ function parsuj(tekst, teraz){
   let m;
 
   const zjedz = (re) => { const r = t.match(re); if (r) zjedzone.push(r[0]); return r; };
+
+  /* --- termin mglisty ---
+     "w tym tygodniu", "niedlugo", "kiedys" to nie jest termin, tylko intencja.
+     Nie zgadujemy za uzytkownika — apka dopyta, ktory to dzien. */
+  let niepewne = false;
+  const MGLISTE = /\b(w tym tygodniu|w tym miesiacu|na dniach|niedlugo|wkrotce|kiedys|jak bede mial czas|jak bedzie czas|w wolnej chwili|w tych dniach|szybko|zaraz)\b/;
+  if (MGLISTE.test(t)){
+    niepewne = true;
+    zjedzone.push(t.match(MGLISTE)[0]);
+  }
 
   // --- POWTARZANIE ---
   if ((m = zjedz(/\b(codziennie|kazdego dnia|każdego dnia)\b/))) powtarzanie = 'dziennie';
@@ -320,7 +330,7 @@ function parsuj(tekst, teraz){
   if (!tytul) tytul = kompakt;
   tytul = tytul.charAt(0).toUpperCase() + tytul.slice(1);
 
-  return { tytul, kiedy, maGodzine, kategoria, ikona, pilne, trwanie, powtarzanie, surowy: oryg };
+  return { tytul, kiedy, maGodzine, kategoria, ikona, pilne, trwanie, powtarzanie, niepewne, surowy: oryg };
 }
 
 if (typeof module !== 'undefined') module.exports = { parsuj };

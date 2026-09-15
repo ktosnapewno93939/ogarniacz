@@ -70,13 +70,27 @@ zakłada popołudnie („o trzeciej" = 15:00), chyba że padnie „rano".
 - **Kalendarz** — miesiąc jak w iPhonie: kropki pod dniami z zadaniami (pomarańczowa = pilne), dotknięcie dnia pokazuje jego listę pod spodem.
 - **Notatnik** — pomysły bez terminu: projekt do zrobienia, coś do sprawdzenia, myśl której szkoda stracić.
 
-### Zadanie zawsze ma termin
+### Asystent decyduje, gdzie to trafi
 
-Nie ma już „skrzynki bez terminu". Rzecz bez daty przepada między dniami —
-nie widać jej w kalendarzu, nie przypomni się, po tygodniu jest martwa.
-Dlatego gdy nie podasz terminu, zadanie ląduje na **dziś** jako całodniowe.
+Nie każde zdanie jest zadaniem. Apka rozdziela to na trzy przypadki:
 
-Przy wpisywaniu, pod podglądem, są przyciski na jedno dotknięcie:
+| Powiesz | Co się stanie |
+|---|---|
+| „spotkanie **jutro o 12**" | → **Kalendarz**, konkretny termin |
+| „spotkanie **w tym tygodniu**" | → **dopyta**, który to dzień |
+| „mam **założyć spółkę**" | → **Notatnik**, bo to jeszcze nie zadanie |
+
+**Nic nie ląduje w kalendarzu bez Twojej decyzji.** Zgadywanie za użytkownika
+kończy się zadaniem w złym dniu — a takiemu kalendarzowi przestaje się ufać
+i wtedy cała apka jest do wyrzucenia.
+
+Terminy mgliste, na które apka dopyta: „w tym tygodniu", „na dniach",
+„niedługo", „wkrótce", „kiedyś", „w wolnej chwili", „jak będzie czas".
+Wtedy dostajesz rząd dni (dziś, jutro, 5 kolejnych) i godzin
+(cały dzień, 9:00, 12:00, 15:00, 18:00) — jedno dotknięcie i gotowe.
+Obok jest **→ notatnik**, jeśli jednak nie chcesz tego planować.
+
+Przy zwykłym wpisywaniu, pod podglądem, są skróty:
 **za 30 min · za godzinę · dziś 18:00 · jutro 9:00**.
 
 ### Notatnik — na to, co nie jest jeszcze zadaniem
@@ -88,6 +102,9 @@ Będąc na zakładce Notatnik, wszystko co wpiszesz idzie tam bez słowa-klucza.
 - dotknięcie treści — poprawianie w miejscu, notatka może być długa
 - **☆** — przypięcie na górę
 - **→ zadanie** — zamienia notatkę w zadanie na dziś, stamtąd ustawiasz termin
+
+W drugą stronę też: przy każdym zadaniu jest **📝**, które przenosi je
+do notatnika, gdy okaże się, że to jednak nie rzecz na konkretny dzień.
 
 To rozdzielenie jest celowe: zadania mają terminy i pilnują Cię same,
 notatki czekają spokojnie, aż sam zdecydujesz, że to robisz.

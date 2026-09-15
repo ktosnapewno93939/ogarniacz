@@ -16,8 +16,15 @@ function wczytaj(){
       s.seria = s.seria || { dzien:null, ile:0 };
       s.slownik = Array.isArray(s.slownik) ? s.slownik : [];
       s.notatki = Array.isArray(s.notatki) ? s.notatki : [];
-      // zadania z dawnej "skrzynki" dostaja termin na dzis — nic nie ginie
-      s.zadania.forEach(z => { if (!z.kiedy){ z.kiedy = new Date(); z.kiedy.setHours(0,0,0,0); z.maGodzine = false; } });
+      // zadania z dawnej "skrzynki" (bez terminu) wedruja do notatnika — tam jest ich miejsce
+      const bezTerminu = s.zadania.filter(z => !z.kiedy);
+      if (bezTerminu.length){
+        s.zadania = s.zadania.filter(z => z.kiedy);
+        bezTerminu.forEach(z => s.notatki.unshift({
+          id: z.id, tresc: z.tytul, przypiete: false,
+          utworzone: z.utworzone || new Date().toISOString()
+        }));
+      }
       return s;
     }
   }catch(e){}
@@ -127,6 +134,55 @@ function zapamietajSlowo(w){
   return true;
 }
 
+/* ---------------- asystent: dopytanie o termin ----------------
+   ADHD mowi szybko i ogolnie ("spotkanie w tym tygodniu"). Zgadywanie za
+   uzytkownika konczy sie zadaniem w zlym dniu, ktoremu przestaje sie ufac.
+   Wiec apka nie zgaduje — pokazuje dni do wyboru i czeka jedno dotkniecie. */
+let kolejkaPytan = [];
+let wybor = { ts:null, godz:null };
+
+function pokazDoprecyzowanie(){
+  const el = $('#doprecyzuj');
+  if (!kolejkaPytan.length){ el.classList.add('ukryty'); el.innerHTML = ''; return; }
+
+  const tekst = kolejkaPytan[0];
+  const p = parsuj(tekst);
+  const dzis = new Date(); dzis.setHours(0,0,0,0);
+
+  const dni = [];
+  for (let i = 0; i < 7; i++){
+    const d = new Date(dzis); d.setDate(d.getDate() + i);
+    const etykieta = i === 0 ? 'dziś' : i === 1 ? 'jutro'
+      : d.toLocaleDateString('pl-PL',{weekday:'short'}) + ' ' + d.getDate();
+    dni.push('<button data-dzienw="' + dzien(d) + '"' +
+      (wybor.ts === dzien(d) ? ' class="wybrane"' : '') + '>' + etykieta + '</button>');
+  }
+
+  const godziny = [['','cały dzień'],['9','9:00'],['12','12:00'],['15','15:00'],['18','18:00']]
+    .map(([v,lab]) => '<button data-godzw="' + v + '"' +
+      ((wybor.godz || '') === v ? ' class="wybrane"' : '') + '>' + lab + '</button>').join('');
+
+  el.innerHTML =
+    '<div class="dpNag">Kiedy dokładnie?' +
+      (kolejkaPytan.length > 1 ? ' <span>(' + kolejkaPytan.length + ' do ustalenia)</span>' : '') +
+    '</div>' +
+    '<div class="dpTytul">' + esc(p.tytul) + '</div>' +
+    '<div class="dpRzad">' + dni.join('') + '</div>' +
+    '<div class="dpRzad">' + godziny + '</div>' +
+    '<div class="dpAkcje">' +
+      '<button class="dpZapisz" data-dp="zapisz"' + (wybor.ts ? '' : ' disabled') + '>Zapisz w kalendarzu</button>' +
+      '<button class="dpNotka" data-dp="notatnik">→ notatnik</button>' +
+    '</div>';
+  el.classList.remove('ukryty');
+}
+
+function zamknijDoprecyzowanie(){
+  kolejkaPytan.shift();
+  wybor = { ts:null, godz:null };
+  if (kolejkaPytan.length) pokazDoprecyzowanie();
+  else { $('#doprecyzuj').classList.add('ukryty'); $('#doprecyzuj').innerHTML = ''; }
+}
+
 /* ---------------- notatnik ----------------
    Miejsce na pomysly, ktore nie sa jeszcze zadaniem: projekt do zrobienia,
    cos ciekawego do sprawdzenia, mysl ktora nie moze uciec.
@@ -158,22 +214,23 @@ function notatkaNaZadanie(id){
   const i = stan.notatki.findIndex(n => n.id === id);
   if (i < 0) return;
   const n = stan.notatki[i];
-  const z = dodajZTekstu(n.tresc);
+  const z = dodajZTekstu(n.tresc, new Date());
   stan.notatki.splice(i, 1);
   zapisz(); rysuj();
   toast(z ? 'Zadanie na ' + ludzkaData(z) : 'Zrobione zadanie');
 }
 
 /* ---------------- zadania ---------------- */
-function dodajZTekstu(tekst){
+function dodajZTekstu(tekst, domyslnyDzien){
   if (!tekst.trim()) return null;
   const p = parsuj(tekst);
-  // brak terminu = dzis. Rzecz bez daty nie istnieje — przepada miedzy dniami.
-  if (!p.kiedy){
-    p.kiedy = new Date();
-    p.kiedy.setHours(0,0,0,0);
-    p.maGodzine = false;
+  // Termin nadajemy tylko wtedy, gdy ktos swiadomie o niego poprosil
+  // (np. przenoszac notatke do zadan). Samo z siebie nic nie ladu je na dzis.
+  if (!p.kiedy && domyslnyDzien){
+    p.kiedy = new Date(domyslnyDzien);
+    if (!p.maGodzine) p.kiedy.setHours(0,0,0,0);
   }
+  if (!p.kiedy) return null;
   const z = {
     id: Date.now() + '-' + Math.random().toString(36).slice(2,7),
     tytul: p.tytul,
@@ -277,6 +334,22 @@ function edytuj(el, id){
   });
 }
 
+/* Czasem dopiero po zapisaniu widac, ze to jednak nie jest zadanie na termin. */
+function zadanieNaNotatke(id){
+  const i = stan.zadania.findIndex(z => z.id === id);
+  if (i < 0) return;
+  const z = stan.zadania[i];
+  stan.zadania.splice(i, 1);
+  stan.notatki.unshift({
+    id: Date.now() + '-' + Math.random().toString(36).slice(2,7),
+    tresc: z.tytul,
+    przypiete: false,
+    utworzone: new Date().toISOString()
+  });
+  zapisz(); rysuj();
+  toast('Przeniesione do notatnika');
+}
+
 function usun(id){
   const i = stan.zadania.findIndex(x => x.id === id);
   if (i >= 0){ stan.zadania.splice(i,1); zapisz(); rysuj(); toast('Usunięte'); }
@@ -344,6 +417,7 @@ function kartaHTML(z){
     '</div>' +
     '<div class="akcje">' +
       '<button class="mini" data-akcja="plus" title="+15 min">+15</button>' +
+      '<button class="mini" data-akcja="doNotatnika" title="Do notatnika">📝</button>' +
       '<button class="mini" data-akcja="usun" title="Usuń">✕</button>' +
     '</div></div>';
 }
@@ -789,7 +863,42 @@ function zatwierdz(){
     return;
   }
 
-  const dodane = rozbij(txt).map(dodajZTekstu).filter(Boolean);
+  /* Asystent rozdziela to na trzy przypadki:
+     - jest konkretny termin            -> zadanie w kalendarzu
+     - termin mglisty ("w tym tygodniu")-> dopytujemy, ktory dzien
+     - terminu nie ma wcale             -> notatnik, bo to jeszcze nie zadanie */
+  const dodane = [];
+  const doPytania = [];
+  const doNotatnika = [];
+  for (const kawalek of rozbij(txt)){
+    const p = parsuj(kawalek);
+    if (p.niepewne) doPytania.push(kawalek);
+    else if (!p.kiedy) doNotatnika.push(kawalek);
+    else { const z = dodajZTekstu(kawalek); if (z) dodane.push(z); }
+  }
+
+  doNotatnika.forEach(dodajNotatke);
+
+  if (doPytania.length){
+    $('#pole').value = '';
+    $('#podglad').classList.add('ukryty');
+    ostatniePoprawki = [];
+    kolejkaPytan = doPytania;
+    rysuj();
+    pokazDoprecyzowanie();
+    return;
+  }
+
+  if (!dodane.length && doNotatnika.length){
+    $('#pole').value = '';
+    $('#podglad').classList.add('ukryty');
+    ostatniePoprawki = [];
+    if (widok !== 'notatnik'){ widok = 'notatnik'; ustawZakladke('notatnik'); }
+    rysuj();
+    if (navigator.vibrate) navigator.vibrate([10,40,10]);
+    toast(doNotatnika.length > 1 ? 'Bez terminu → notatnik' : 'Bez terminu → notatnik');
+    return;
+  }
   if (!dodane.length) return;
   $('#pole').value = '';
   $('#podglad').classList.add('ukryty');
@@ -807,6 +916,37 @@ function zatwierdz(){
 }
 
 /* ---------------- zdarzenia ---------------- */
+$('#doprecyzuj').addEventListener('click', e => {
+  const d = e.target.closest('[data-dzienw]');
+  if (d){ wybor.ts = +d.dataset.dzienw; pokazDoprecyzowanie(); return; }
+
+  const g = e.target.closest('[data-godzw]');
+  if (g){ wybor.godz = g.dataset.godzw; pokazDoprecyzowanie(); return; }
+
+  const b = e.target.closest('[data-dp]');
+  if (!b) return;
+
+  if (b.dataset.dp === 'notatnik'){
+    dodajNotatke(kolejkaPytan[0]);
+    zamknijDoprecyzowanie();
+    if (widok !== 'notatnik'){ widok = 'notatnik'; ustawZakladke('notatnik'); }
+    rysuj(); toast('W notatniku');
+    return;
+  }
+
+  if (b.dataset.dp === 'zapisz'){
+    if (!wybor.ts) return;
+    const termin = new Date(wybor.ts);
+    if (wybor.godz) termin.setHours(+wybor.godz, 0, 0, 0);
+    const z = dodajZTekstu(kolejkaPytan[0], termin);
+    if (z && wybor.godz){ z.kiedy = termin; z.maGodzine = true; zapisz(); }
+    zamknijDoprecyzowanie();
+    rysuj();
+    if (navigator.vibrate) navigator.vibrate([10,40,10]);
+    toast(z ? 'Zapisane: ' + ludzkaData(z) : 'Zapisane');
+  }
+});
+
 $('#podglad').addEventListener('click', e => {
   const b = e.target.closest('[data-szybko]'); if (!b) return;
   const pole = $('#pole');
@@ -852,6 +992,7 @@ $('#ekran').addEventListener('click', e => {
   const kontener = btn.closest('[data-id]'); if (!kontener) return;
   const id = kontener.dataset.id;
   const a = btn.dataset.akcja;
+  if (a === 'doNotatnika'){ zadanieNaNotatke(id); return; }
   if (a === 'edytujNotke'){ edytujNotke(btn, id); return; }
   if (a === 'naZadanie'){ notatkaNaZadanie(id); return; }
   if (a === 'przypnij'){
