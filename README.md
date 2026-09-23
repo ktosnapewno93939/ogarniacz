@@ -47,7 +47,7 @@ Mówisz normalnie, po polsku — aplikacja sama wyciąga termin, godzinę i kate
 | „pilne zadzwonić do księgowej" | oznaczone jako pilne, ląduje na górze |
 | „trening codziennie o 7" | powtarza się co dzień |
 | „napisz maila do galerii na 30 minut" | z blokiem 30 minut na fokus |
-| „kup mleko" | bez godziny → dziś, cały dzień |
+| „kup mleko" | bez terminu → Notatnik |
 | „notatka: album mini dla klientów" | → Notatnik |
 | „spotkanie o wpół do trzeciej" | 14:30 |
 | „zadzwoń o piętnastej" | 15:00 |
@@ -83,7 +83,7 @@ zakłada popołudnie („o trzeciej" = 15:00), chyba że padnie „rano".
 ### Cztery zakładki
 
 - **Teraz** — jedno zadanie. To, które ma sens zrobić w tej chwili (po terminie > pilne > najbliższa godzina > szybkie). Plus timer fokusa.
-- **Dziś** — zaległe, dzisiejsze i skrzynka (rzeczy bez terminu, do rozdzielenia).
+- **Dziś** — zaległe, dzisiejsze i trwające okresy.
 - **Kalendarz** — miesiąc jak w iPhonie: kropki pod dniami z zadaniami (pomarańczowa = pilne), dotknięcie dnia pokazuje jego listę pod spodem.
 - **Notatnik** — pomysły bez terminu: projekt do zrobienia, coś do sprawdzenia, myśl której szkoda stracić.
 
@@ -114,15 +114,17 @@ Nie każde zdanie jest zadaniem. Apka rozdziela to na trzy przypadki:
 | Powiesz | Co się stanie |
 |---|---|
 | „spotkanie **jutro o 12**" | → **Kalendarz**, konkretny termin |
-| „spotkanie **w tym tygodniu**" | → **dopyta**, który to dzień |
+| „spotkanie **w tym tygodniu**" | → **Kalendarz**, okres pon–niedz |
+| „zadzwoń **niedługo**" | → **dopyta**, który to dzień |
 | „mam **założyć spółkę**" | → **Notatnik**, bo to jeszcze nie zadanie |
 
 **Nic nie ląduje w kalendarzu bez Twojej decyzji.** Zgadywanie za użytkownika
 kończy się zadaniem w złym dniu — a takiemu kalendarzowi przestaje się ufać
 i wtedy cała apka jest do wyrzucenia.
 
-Terminy mgliste, na które apka dopyta: „w tym tygodniu", „na dniach",
-„niedługo", „wkrótce", „kiedyś", „w wolnej chwili", „jak będzie czas".
+Terminy mgliste, na które apka dopyta: „na dniach", „niedługo", „wkrótce",
+„kiedyś", „w wolnej chwili", „jak będzie czas". („W tym tygodniu" już nie —
+to jest konkretny okres, patrz wyżej.)
 Wtedy dostajesz rząd dni (dziś, jutro, 5 kolejnych) i godzin
 (cały dzień, 9:00, 12:00, 15:00, 18:00) — jedno dotknięcie i gotowe.
 Obok jest **→ notatnik**, jeśli jednak nie chcesz tego planować.
