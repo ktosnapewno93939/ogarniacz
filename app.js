@@ -1,3 +1,4 @@
+const WERSJA = "2026-09-23 13:20";
 /* Ogarniacz — asystent dla glowy, ktora pamieta wszystko naraz i nic po kolei.
    Dane trzymane lokalnie (localStorage). Zero kont, zero chmury, zero oplat. */
 
@@ -1272,6 +1273,25 @@ $('#btnUstawienia').onclick = () => {
   $('#btnPush').textContent = stan.ustawienia.push ? 'Włączone ✓' : 'Włącz';
   $('#modal').classList.remove('ukryty');
 };
+$('#nrWersji').textContent = WERSJA;
+
+/* iOS potrafi trzymac stara wersje apki dodanej do ekranu poczatkowego.
+   Ten przycisk czysci wszystko i laduje najswiezsza. */
+$('#btnOdswiez').onclick = async () => {
+  toast('Czyszczę i ładuję od nowa…');
+  try{
+    if ('serviceWorker' in navigator){
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r => r.unregister()));
+    }
+    if (window.caches){
+      const klucze = await caches.keys();
+      await Promise.all(klucze.map(k => caches.delete(k)));
+    }
+  }catch(e){}
+  setTimeout(() => location.replace(location.pathname + '?v=' + Date.now()), 600);
+};
+
 $('#btnProbne').onclick = probnePowiadomienie;
 
 $('#btnDiagnoza').onclick = async () => {

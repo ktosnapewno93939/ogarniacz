@@ -457,3 +457,5 @@ textarea.edycjaNotki{
 .diagWiersz span{color:var(--przygas)}
 .diagWiersz b.ok{color:var(--akcent)}
 .diagWiersz b.zle{color:var(--wisi)}
+.wersja{text-align:center;font-size:12px;color:var(--przygas);padding:6px 0 12px}
+.wersja b{color:var(--tekst);font-weight:600}
