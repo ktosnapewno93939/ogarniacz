@@ -30,7 +30,10 @@ function wczytaj(){
   }catch(e){}
   return { zadania:[], notatki:[], ustawienia:{ przed:10, fokus:25, pracaOd:'08:00', pracaDo:'16:30', weekend:false, wieczor:'21:00' }, seria:{ dzien:null, ile:0 }, slownik:[] };
 }
-function zapisz(){ localStorage.setItem(KLUCZ, JSON.stringify(stan)); }
+function zapisz(){
+  localStorage.setItem(KLUCZ, JSON.stringify(stan));
+  if (typeof planDoOdswiezenia === 'function') planDoOdswiezenia();
+}
 
 /* ---------------- pomocnicze ---------------- */
 const $ = s => document.querySelector(s);
@@ -1266,18 +1269,24 @@ $('#btnUstawienia').onclick = () => {
   $('#chkWeekend').checked = !!stan.ustawienia.weekend;
   $('#selPrzed').value = String(stan.ustawienia.przed);
   $('#selFokus').value = String(stan.ustawienia.fokus);
-  $('#btnPowiadomienia').textContent =
-    ('Notification' in window && Notification.permission === 'granted') ? 'Włączone ✓' : 'Włącz';
+  $('#btnPush').textContent = stan.ustawienia.push ? 'Włączone ✓' : 'Włącz';
   $('#modal').classList.remove('ukryty');
 };
 $('#btnZamknij').onclick = () => $('#modal').classList.add('ukryty');
 $('#selPrzed').onchange = e => { stan.ustawienia.przed = +e.target.value; zapisz(); };
 $('#selFokus').onchange = e => { stan.ustawienia.fokus = +e.target.value; zapisz(); };
-$('#btnPowiadomienia').onclick = async () => {
-  if (!('Notification' in window)) { toast('Ta przeglądarka nie ma powiadomień'); return; }
-  const w = await Notification.requestPermission();
-  $('#btnPowiadomienia').textContent = w === 'granted' ? 'Włączone ✓' : 'Odmowa';
-  if (w === 'granted') powiadom('Ogarniacz', 'Powiadomienia działają.');
+$('#btnPush').onclick = async () => {
+  const b = $('#btnPush');
+  if (stan.ustawienia.push){
+    await wylaczPush();
+    b.textContent = 'Włącz';
+    toast('Przypomnienia wyłączone');
+    return;
+  }
+  b.textContent = 'Włączam…';
+  const ok = await wlaczPush();
+  b.textContent = ok ? 'Włączone ✓' : 'Włącz';
+  if (ok) toast('Gotowe — zaraz przyjdzie próbne');
 };
 $('#btnIcsWszystko').onclick = () => {
   const lista = stan.zadania.filter(z => !z.zrobione && z.kiedy);

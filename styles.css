@@ -446,3 +446,4 @@ textarea.edycjaNotki{
   min-width:104px;text-align:center;
 }
 .przelacznik{width:24px;height:24px;accent-color:var(--akcent)}
+.wiersz small{color:var(--przygas);font-size:12px}

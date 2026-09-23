@@ -212,12 +212,30 @@ Co to zmienia:
   albo „Nic nie masz na jutro, wpisz teraz"
 - w weekendy cisza, jeśli nie zaznaczysz, że pracujesz
 
-### Ważne ograniczenie
+### Prawdziwe powiadomienia (działa przy zamkniętej apce)
 
-Powiadomienia z samej strony działają **tylko gdy apka jest otwarta**.
-Żeby telefon odezwał się przy zamkniętej apce, jest jedna droga i trzeba
-ją uruchomić ręcznie:
+Ustawienia → **Przypomnienia na telefon** → Włącz. iPhone zapyta o zgodę,
+potem przyjdzie próbne powiadomienie.
 
+Od tej pory telefon odzywa się sam — apka nie musi być otwarta:
+
+- zadania z godziną, na 10 minut przed (albo ile ustawisz)
+- całodniowe i okresy — o starcie pracy, każdego dnia okresu
+- „Plan dnia" rano w dni robocze
+- „Co jutro?" wieczorem
+
+Działa na własnym serwerze na Cloudflare Workers — darmowy plan, bez karty.
+Serwer dostaje tylko plan: **o której i z jakim tekstem**. Nic poza tym —
+żadnych notatek, historii ani ustawień. Wyłączasz tym samym przyciskiem,
+wtedy plan jest z serwera kasowany.
+
+**Warunek na iPhonie:** apka musi być dodana do ekranu początkowego
+(Safari → Udostępnij → Dodaj do ekranu początkowego). Z poziomu zwykłej
+karty Safari iOS nie pozwala na powiadomienia.
+
+### Zapas: eksport do Kalendarza
+
+Niezależnie od powiadomień możesz wrzucić wszystko do Kalendarza:
 Ustawienia → **Wyślij wszystko do Kalendarza iPhone (.ics)** → otwórz pobrany plik.
 
 Do Kalendarza wpadną z alarmami:
@@ -225,9 +243,19 @@ Do Kalendarza wpadną z alarmami:
 - **codzienny „plan dnia"** o godzinie startu pracy, pn–pt
 - **codzienne „co jutro?"** o 21:00
 
-Od tego momentu przypomina Ci iPhone, nie strona — a to działa zawsze,
-też przy wyłączonym telefonie w kieszeni. Powtórz eksport, gdy dopiszesz
-nowe zadania.
+Przydaje się, gdy chcesz mieć zadania widoczne obok innych wydarzeń
+w Kalendarzu. Powtórz eksport, gdy dopiszesz nowe zadania.
+
+## Serwer przypomnień
+
+Kod w `~/ogarniacz-push`. Wgrywanie zmian:
+
+```
+cd ~/ogarniacz-push && npx wrangler deploy
+```
+
+Adres: `https://ogarniacz-push.ogarniacz-janz.workers.dev`
+Klucze VAPID leżą w `~/ogarniacz-push/klucze.txt` (poza repozytorium).
 
 ## Moje imiona (gdy dyktowanie przekręca)
 
