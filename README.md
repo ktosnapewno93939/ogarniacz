@@ -87,6 +87,26 @@ zakłada popołudnie („o trzeciej" = 15:00), chyba że padnie „rano".
 - **Kalendarz** — miesiąc jak w iPhonie: kropki pod dniami z zadaniami (pomarańczowa = pilne), dotknięcie dnia pokazuje jego listę pod spodem.
 - **Notatnik** — pomysły bez terminu: projekt do zrobienia, coś do sprawdzenia, myśl której szkoda stracić.
 
+### Okresy i zakresy
+
+Nie wszystko da się przypiąć do jednej godziny. „Zrobić to w tym tygodniu"
+to prawdziwy termin, tylko szerszy — apka zapisuje go jako okno czasu
+z początkiem i końcem:
+
+| Powiesz | Okres |
+|---|---|
+| „ogarnąć sprzątanie **w tym tygodniu**" | dziś → niedziela |
+| „**na ten tydzień** przygotować ofertę" | dziś → niedziela |
+| „**w przyszłym tygodniu** rozliczyć ZUS" | pon → niedz |
+| „**w tym miesiącu** założyć spółkę" | dziś → koniec miesiąca |
+| „obróbka **od poniedziałku do środy**" | pon → śr |
+| „urlop **od 10.10 do 15.10**" | 10 paź → 15 paź |
+| „sesja **w weekend**" | sob → niedz |
+
+Takie zadanie widać w kalendarzu **w każdym dniu okresu**, a na karcie jest
+licznik: „zostało 3 dni", „został 1 dzień", „ostatni dzień". Pilność liczy się
+od końca okna — dopóki okno trwa, nic nie wisi.
+
 ### Asystent decyduje, gdzie to trafi
 
 Nie każde zdanie jest zadaniem. Apka rozdziela to na trzy przypadki:
@@ -177,9 +197,35 @@ apka sama zapisuje po skończeniu zdania. Ponowne kliknięcie kończy nagrywanie
 **a potem** wyślij galerię" → trzy osobne zadania. Tnie na `oraz`, `potem`,
 `a potem`, `i jeszcze`, `;` — samo `i` zostaje, żeby „Marka i Anny" się nie rozpadło.
 
-**Przypomnienia, które naprawdę zadzwonią:** Ustawienia → „Wyślij wszystkie terminy
-do Kalendarza/Przypomnień (.ics)". Otwórz pobrany plik na iPhonie — terminy wpadną
-do Kalendarza z alarmem. To najpewniejsza droga, dopóki apka nie jest natywna.
+## Przypomnienia i rytm dnia
+
+Ustawienia → **Mój rytm dnia**: godziny pracy (domyślnie 8:00–16:30),
+pora wieczornego pytania o jutro (21:00) i czy pracujesz w weekendy.
+
+Co to zmienia:
+
+- **zadania całodniowe i okresy przypominają się na starcie pracy**,
+  a nie o północy, kiedy i tak nikt ich nie zrobi
+- **wieczorem apka pyta o jutro** — „Masz już 3 na jutro, dorzuć resztę"
+  albo „Nic nie masz na jutro, wpisz teraz"
+- w weekendy cisza, jeśli nie zaznaczysz, że pracujesz
+
+### Ważne ograniczenie
+
+Powiadomienia z samej strony działają **tylko gdy apka jest otwarta**.
+Żeby telefon odezwał się przy zamkniętej apce, jest jedna droga i trzeba
+ją uruchomić ręcznie:
+
+Ustawienia → **Wyślij wszystko do Kalendarza iPhone (.ics)** → otwórz pobrany plik.
+
+Do Kalendarza wpadną z alarmami:
+- wszystkie zadania (okresy jako wydarzenia wielodniowe)
+- **codzienny „plan dnia"** o godzinie startu pracy, pn–pt
+- **codzienne „co jutro?"** o 21:00
+
+Od tego momentu przypomina Ci iPhone, nie strona — a to działa zawsze,
+też przy wyłączonym telefonie w kieszeni. Powtórz eksport, gdy dopiszesz
+nowe zadania.
 
 ## Moje imiona (gdy dyktowanie przekręca)
 

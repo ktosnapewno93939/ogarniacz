@@ -69,6 +69,19 @@
       </select>
     </label>
     <hr>
+    <div class="slownikNag">Mój rytm dnia</div>
+    <div class="slownikOpis">Zadania całodniowe i okresy przypomną się na starcie
+      pracy, a nie o północy. Wieczorem apka zapyta, co masz na jutro.</div>
+    <label class="wiersz"><span>Pracuję od</span>
+      <input type="time" id="inpPracaOd" class="czasInp"></label>
+    <label class="wiersz"><span>Pracuję do</span>
+      <input type="time" id="inpPracaDo" class="czasInp"></label>
+    <label class="wiersz"><span>Pytaj o jutro o</span>
+      <input type="time" id="inpWieczor" class="czasInp"></label>
+    <label class="wiersz"><span>Pracuję też w weekend</span>
+      <input type="checkbox" id="chkWeekend" class="przelacznik"></label>
+
+    <hr>
     <div class="slownikNag">Moje imiona i słowa</div>
     <div class="slownikOpis">Dyktowanie przekręca rzadsze imiona („Eryk" → „Erica").
       Dopisz swoje, a apka będzie je prostować sama. Poprawisz zadanie ręcznie —
@@ -80,7 +93,10 @@
     <div id="listaSlow" class="listaSlow"></div>
 
     <hr>
-    <button id="btnIcsWszystko" class="szeroki">Wyślij wszystkie terminy do Kalendarza/Przypomnień (.ics)</button>
+    <button id="btnIcsWszystko" class="szeroki glowny">Wyślij wszystko do Kalendarza iPhone (.ics)</button>
+    <div class="slownikOpis">To jedyny sposób, żeby telefon przypomniał Ci przy
+      zamkniętej apce. Wrzuca zadania, okresy oraz codzienny plan dnia
+      i wieczorne pytanie o jutro — wszystko z alarmami.</div>
     <button id="btnEksport" class="szeroki">Zapisz kopię danych (.json)</button>
     <label class="szeroki plikBtn">Wczytaj kopię danych
       <input id="inpImport" type="file" accept="application/json" hidden>

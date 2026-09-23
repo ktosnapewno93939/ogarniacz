@@ -164,10 +164,73 @@ function parsuj(tekst, teraz){
      "w tym tygodniu", "niedlugo", "kiedys" to nie jest termin, tylko intencja.
      Nie zgadujemy za uzytkownika — apka dopyta, ktory to dzien. */
   let niepewne = false;
-  const MGLISTE = /\b(w tym tygodniu|w tym miesiacu|na dniach|niedlugo|wkrotce|kiedys|jak bede mial czas|jak bedzie czas|w wolnej chwili|w tych dniach|szybko|zaraz)\b/;
+  const MGLISTE = /\b(na dniach|niedlugo|wkrotce|kiedys|jak bede mial czas|jak bedzie czas|w wolnej chwili|w tych dniach|szybko)\b/;
   if (MGLISTE.test(t)){
     niepewne = true;
     zjedzone.push(t.match(MGLISTE)[0]);
+  }
+
+  /* --- okresy: "w tym tygodniu", "od poniedzialku do srody" ---
+     To nie jest termin na konkretna godzine, tylko okno czasu.
+     Zadanie ma wtedy poczatek i koniec, a pilnosc liczy sie od konca. */
+  let doKiedy = null;
+  {
+    const koniecTygodnia = (od) => {           // niedziela biezacego tygodnia
+      const d = new Date(od);
+      d.setDate(d.getDate() + ((7 - d.getDay()) % 7));
+      return startOfDay(d);
+    };
+
+    if ((m = zjedz(/\b(w tym tygodniu|na ten tydzien|do konca tygodnia|w ciagu tygodnia)\b/))){
+      data = startOfDay(teraz);
+      doKiedy = koniecTygodnia(teraz);
+    }
+    else if ((m = zjedz(/\b(w przyszlym tygodniu|na przyszly tydzien)\b/))){
+      const pon = new Date(teraz);
+      pon.setDate(pon.getDate() + ((8 - pon.getDay()) % 7 || 7));
+      data = startOfDay(pon);
+      doKiedy = koniecTygodnia(pon);
+    }
+    else if ((m = zjedz(/\b(w tym miesiacu|na ten miesiac|do konca miesiaca)\b/))){
+      data = startOfDay(teraz);
+      doKiedy = startOfDay(new Date(teraz.getFullYear(), teraz.getMonth() + 1, 0));
+    }
+    else if ((m = zjedz(/\b(w weekend|na weekend)\b/))){
+      const d = new Date(teraz);
+      d.setDate(d.getDate() + ((6 - d.getDay() + 7) % 7));
+      data = startOfDay(d);
+      doKiedy = startOfDay(new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1));
+    }
+    else {
+      // "od poniedzialku do srody"
+      const dniRe = '(poniedzial\\w+|wtork?\\w*|srod\\w+|czwartk?\\w*|piatk?\\w*|sobot\\w+|niedziel\\w+)';
+      if ((m = zjedz(new RegExp('\\bod ' + dniRe + ' do ' + dniRe)))){
+        // porownujemy 4 pierwsze litery rdzenia — "srody", "srode", "sroda"
+        const naDzien = (slowo) => {
+          const klucz = Object.keys(DNI).find(k => slowo.slice(0,4) === bezOgonkow(k).slice(0,4));
+          if (klucz === undefined) return null;
+          const d = new Date(teraz);
+          d.setDate(d.getDate() + ((DNI[klucz] - d.getDay() + 7) % 7));
+          return startOfDay(d);
+        };
+        const a = naDzien(m[1]), b = naDzien(m[2]);
+        if (a && b){
+          data = a;
+          doKiedy = b < a ? startOfDay(new Date(b.getFullYear(), b.getMonth(), b.getDate() + 7)) : b;
+        }
+      }
+      // "od 10 do 15 marca" / "od 10.03 do 15.03"
+      else if ((m = zjedz(/\bod (\d{1,2})[.\/](\d{1,2}) do (\d{1,2})[.\/](\d{1,2})\b/))){
+        const rok = teraz.getFullYear();
+        data = startOfDay(new Date(rok, +m[2] - 1, +m[1]));
+        doKiedy = startOfDay(new Date(rok, +m[4] - 1, +m[3]));
+      }
+      else if ((m = zjedz(new RegExp('\\bod (\\d{1,2}) do (\\d{1,2})\\s+(' + Object.keys(MIESIACE_ASCII).join('|') + ')\\b')))){
+        const mies = MIESIACE_ASCII[m[3]], rok = teraz.getFullYear();
+        data = startOfDay(new Date(rok, mies, +m[1]));
+        doKiedy = startOfDay(new Date(rok, mies, +m[2]));
+      }
+    }
   }
 
   // --- POWTARZANIE ---
@@ -247,11 +310,7 @@ function parsuj(tekst, teraz){
     if (zjedz(/\b(dzisiaj|dzis|dziś)\b/)) data = startOfDay(teraz);
     else if (zjedz(/\bpojutrze\b/)) { const d = new Date(teraz); d.setDate(d.getDate()+2); data = startOfDay(d); }
     else if (zjedz(/\bjutro\b/)) { const d = new Date(teraz); d.setDate(d.getDate()+1); data = startOfDay(d); }
-    else if (zjedz(/\b(w|na) weekend\b/)) {
-      const d = new Date(teraz); const doSob = (6 - d.getDay() + 7) % 7 || 7;
-      d.setDate(d.getDate() + doSob); data = startOfDay(d);
-    }
-    else if (zjedz(/\b(w przyszlym tygodniu|w przyszłym tygodniu|za tydzien|za tydzień)\b/)) {
+    else if (zjedz(/\b(za tydzien|za tydzień)\b/)) {
       const d = new Date(teraz); d.setDate(d.getDate()+7); data = startOfDay(d);
     }
   }
@@ -368,7 +427,7 @@ function parsuj(tekst, teraz){
   if (!tytul) tytul = kompakt;
   tytul = oczyscTytul(tytul);
 
-  return { tytul, kiedy, maGodzine, kategoria, ikona, pilne, trwanie, powtarzanie, niepewne, surowy: oryg };
+  return { tytul, kiedy, doKiedy, maGodzine, kategoria, ikona, pilne, trwanie, powtarzanie, niepewne, surowy: oryg };
 }
 
 if (typeof module !== 'undefined') module.exports = { parsuj, oczyscTytul };

@@ -11,8 +11,8 @@ function wczytaj(){
   try{
     const s = JSON.parse(localStorage.getItem(KLUCZ));
     if (s && Array.isArray(s.zadania)) {
-      s.zadania.forEach(z => { if (z.kiedy) z.kiedy = new Date(z.kiedy); });
-      s.ustawienia = Object.assign({ przed:10, fokus:25 }, s.ustawienia || {});
+      s.zadania.forEach(z => { if (z.kiedy) z.kiedy = new Date(z.kiedy); if (z.doKiedy) z.doKiedy = new Date(z.doKiedy); });
+      s.ustawienia = Object.assign({ przed:10, fokus:25, pracaOd:'08:00', pracaDo:'16:30', weekend:false, wieczor:'21:00' }, s.ustawienia || {});
       s.seria = s.seria || { dzien:null, ile:0 };
       s.slownik = Array.isArray(s.slownik) ? s.slownik : [];
       s.notatki = Array.isArray(s.notatki) ? s.notatki : [];
@@ -28,7 +28,7 @@ function wczytaj(){
       return s;
     }
   }catch(e){}
-  return { zadania:[], notatki:[], ustawienia:{ przed:10, fokus:25 }, seria:{ dzien:null, ile:0 }, slownik:[] };
+  return { zadania:[], notatki:[], ustawienia:{ przed:10, fokus:25, pracaOd:'08:00', pracaDo:'16:30', weekend:false, wieczor:'21:00' }, seria:{ dzien:null, ile:0 }, slownik:[] };
 }
 function zapisz(){ localStorage.setItem(KLUCZ, JSON.stringify(stan)); }
 
@@ -239,6 +239,7 @@ function dodajZTekstu(tekst, domyslnyDzien){
     id: Date.now() + '-' + Math.random().toString(36).slice(2,7),
     tytul: p.tytul,
     kiedy: p.kiedy,
+    doKiedy: p.doKiedy || null,
     maGodzine: p.maGodzine,
     kategoria: p.kategoria,
     pilne: p.pilne,
@@ -427,7 +428,9 @@ function pilnosc(z){
   if (z.zrobione) return 'zrobione';
   const teraz = new Date();
   const minDo = z.maGodzine ? (new Date(z.kiedy) - teraz) / 60000 : null;
-  const dniDo = Math.round((dzien(z.kiedy) - dzisiaj()) / 86400000);
+  // przy okresie liczy sie ostatni dzien — dopoki okno trwa, nic nie wisi
+  const konietTs = z.doKiedy ? dzien(z.doKiedy) : dzien(z.kiedy);
+  const dniDo = Math.round((konietTs - dzisiaj()) / 86400000);
 
   if (dniDo < 0 || (minDo !== null && minDo < 0)) return 'wisi';    // po terminie
   if (minDo !== null && minDo <= 60) return 'teraz';                // w ciagu godziny
@@ -448,6 +451,11 @@ function kartaHTML(z){
     const d = new Date(z.kiedy);
     czas = '<div class="czas"><b>' + d.toLocaleTimeString('pl-PL',{hour:'2-digit',minute:'2-digit'}) + '</b>' +
            (z.trwanie ? '<span>' + trwanieTxt(z.trwanie) + '</span>' : '') + '</div>';
+  } else if (z.doKiedy){
+    const k = new Date(z.doKiedy);
+    const ile = Math.round((dzien(k) - dzien(z.kiedy)) / 86400000) + 1;
+    czas = '<div class="czas okres"><b>' + (ile >= 6 ? 'tydz.' : ile + ' dni') + '</b>' +
+           '<span>do ' + k.toLocaleDateString('pl-PL',{day:'numeric',month:'short'}) + '</span></div>';
   } else if (z.kiedy){
     czas = '<div class="czas caly"><b>cały</b><span>dzień</span></div>';
   } else {
@@ -462,6 +470,15 @@ function kartaHTML(z){
   }
   if (bliskoTxt) meta.push('<span class="' + (bliskoTxt.spoznione ? 'spoznione' : 'blisko') + '">' + bliskoTxt.txt + '</span>');
   if (z.pilne) meta.push('<span class="tag pilnyTag">pilne</span>');
+  if (z.doKiedy){
+    const a = new Date(z.kiedy), b = new Date(z.doKiedy);
+    const zostalo = Math.round((dzien(b) - dzisiaj()) / 86400000);
+    meta.push('<span class="tag okresTag">' +
+      a.toLocaleDateString('pl-PL',{day:'numeric',month:'short'}) + ' – ' +
+      b.toLocaleDateString('pl-PL',{day:'numeric',month:'short'}) + '</span>');
+    if (zostalo >= 0) meta.push('<span class="' + (zostalo <= 1 ? 'blisko' : '') + '">' +
+      (zostalo === 0 ? 'ostatni dzień' : zostalo === 1 ? 'został 1 dzień' : 'zostało ' + zostalo + ' dni') + '</span>');
+  }
   if (z.powtarzanie) meta.push('<span class="tag">powtarza się</span>');
 
   return '<div class="' + klasy.join(' ') + '" data-id="' + z.id + '">' +
@@ -542,7 +559,11 @@ let mcPokazany = (() => { const d = new Date(); d.setDate(1); d.setHours(0,0,0,0
 let dzienWybrany = dzisiaj();
 
 function zadaniaDnia(ts){
-  return stan.zadania.filter(z => z.kiedy && dzien(z.kiedy) === ts).sort(sortuj);
+  return stan.zadania.filter(z => {
+    if (!z.kiedy) return false;
+    if (z.doKiedy) return ts >= dzien(z.kiedy) && ts <= dzien(z.doKiedy);
+    return dzien(z.kiedy) === ts;
+  }).sort(sortuj);
 }
 
 function widokKalendarz(){
@@ -605,7 +626,8 @@ function widokKalendarz(){
 
 function widokTeraz(){
   const z = coTeraz();
-  const naDzis = stan.zadania.filter(x => !x.zrobione && x.kiedy && dzien(x.kiedy) <= dzisiaj()).length;
+  const naDzis = stan.zadania.filter(x => !x.zrobione && x.kiedy &&
+      (x.doKiedy ? dzien(x.kiedy) <= dzisiaj() : dzien(x.kiedy) <= dzisiaj())).length;
   const ileNotatek = stan.notatki.length;
 
   const zrobioneDzis = stan.zadania.filter(x => x.zrobione && dzien(x.kiedy) === dzisiaj()).length;
@@ -663,8 +685,10 @@ function sortuj(a,b){
 
 function widokDzis(){
   const otwarte = stan.zadania.filter(z => !z.zrobione);
-  const spoznione = otwarte.filter(z => z.kiedy && dzien(z.kiedy) < dzisiaj()).sort(sortuj);
-  const dzis = otwarte.filter(z => z.kiedy && dzien(z.kiedy) === dzisiaj()).sort(sortuj);
+  const trwa = z => z.doKiedy && dzisiaj() >= dzien(z.kiedy) && dzisiaj() <= dzien(z.doKiedy);
+  const spoznione = otwarte.filter(z => z.kiedy && !trwa(z) &&
+      dzien(z.doKiedy || z.kiedy) < dzisiaj()).sort(sortuj);
+  const dzis = otwarte.filter(z => z.kiedy && (trwa(z) || dzien(z.kiedy) === dzisiaj())).sort(sortuj);
   const zrobioneDzis = stan.zadania.filter(z => z.zrobione && z.kiedy && dzien(z.kiedy) === dzisiaj());
 
   let html = '';
@@ -733,21 +757,64 @@ function powiadom(tytul, tresc){
   }catch(e){ toast(tytul); }
 }
 
+function naMinuty(hhmm){
+  const [h, m] = String(hhmm || '0:00').split(':');
+  return (+h) * 60 + (+m || 0);
+}
+function terazMinuty(){ const d = new Date(); return d.getHours()*60 + d.getMinutes(); }
+function dzienRoboczy(d){
+  const dz = (d || new Date()).getDay();
+  return stan.ustawienia.weekend ? true : (dz >= 1 && dz <= 5);
+}
+function wGodzinachPracy(){
+  if (!dzienRoboczy()) return false;
+  const t = terazMinuty();
+  return t >= naMinuty(stan.ustawienia.pracaOd) && t <= naMinuty(stan.ustawienia.pracaDo);
+}
+
 setInterval(() => {
   const teraz = Date.now();
   const przed = (stan.ustawienia.przed || 0) * 60000;
+  const startPracy = naMinuty(stan.ustawienia.pracaOd);
   let zmiana = false;
+
   for (const z of stan.zadania){
-    if (z.zrobione || !z.kiedy || !z.maGodzine || z.powiadomiono) continue;
-    const t = new Date(z.kiedy).getTime();
-    if (teraz >= t - przed && teraz < t + 3600000){
-      const ile = Math.round((t - teraz)/60000);
-      powiadom(z.tytul, ile > 0 ? 'za ' + ile + ' min' : 'teraz');
-      z.powiadomiono = true; zmiana = true;
+    if (z.zrobione || !z.kiedy || z.powiadomiono) continue;
+
+    if (z.maGodzine){
+      const t = new Date(z.kiedy).getTime();
+      if (teraz >= t - przed && teraz < t + 3600000){
+        const ile = Math.round((t - teraz)/60000);
+        powiadom(z.tytul, ile > 0 ? 'za ' + ile + ' min' : 'teraz');
+        z.powiadomiono = true; zmiana = true;
+      }
+    } else {
+      /* Zadanie calodniowe albo okres — przypominamy na starcie dnia pracy,
+         a nie o polnocy, kiedy i tak nikt tego nie zrobi. */
+      const trwaDzis = z.doKiedy
+        ? (dzisiaj() >= dzien(z.kiedy) && dzisiaj() <= dzien(z.doKiedy))
+        : dzien(z.kiedy) === dzisiaj();
+      if (trwaDzis && dzienRoboczy() && terazMinuty() >= startPracy && terazMinuty() < startPracy + 90){
+        const ileZostalo = z.doKiedy ? Math.round((dzien(z.doKiedy) - dzisiaj())/86400000) : 0;
+        powiadom(z.tytul, z.doKiedy
+          ? (ileZostalo === 0 ? 'ostatni dzień' : 'zostało ' + ileZostalo + ' dni')
+          : 'na dziś');
+        z.powiadomiono = true; zmiana = true;
+      }
     }
   }
+
+  // wieczorne planowanie jutra
+  const wieczor = naMinuty(stan.ustawienia.wieczor);
+  const dzisKlucz = dzisiaj();
+  if (terazMinuty() >= wieczor && terazMinuty() < wieczor + 60 && stan.ostatniWieczor !== dzisKlucz){
+    const jutro = dzisKlucz + 86400000;
+    const ile = stan.zadania.filter(z => !z.zrobione && z.kiedy && dzien(z.kiedy) === jutro).length;
+    powiadom('Co jutro?', ile ? 'Masz już ' + ile + ' na jutro. Dorzuć resztę.' : 'Nic nie masz na jutro — wpisz teraz.');
+    stan.ostatniWieczor = dzisKlucz; zmiana = true;
+  }
+
   if (zmiana) zapisz();
-  // nie przerysowuj, gdy ktos wlasnie poprawia tekst zadania
   if (!document.querySelector('input.edycja')) rysuj();
 }, 20000);
 
@@ -757,11 +824,60 @@ function icsData(d){
   return d.getUTCFullYear() + p(d.getUTCMonth()+1) + p(d.getUTCDate()) + 'T' +
          p(d.getUTCHours()) + p(d.getUTCMinutes()) + '00Z';
 }
-function zrobIcs(lista){
+function icsDzien(d){
+  const p = n => String(n).padStart(2,'0');
+  return d.getFullYear() + p(d.getMonth()+1) + p(d.getDate());
+}
+
+function zrobIcs(lista, zRytmem){
   const teraz = new Date();
+  const esc_ = s => String(s).replace(/[,;\\]/g, m => '\\' + m);
   let out = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Ogarniacz//PL','CALSCALE:GREGORIAN'];
+
+  if (zRytmem){
+    const [ph, pm] = String(stan.ustawienia.pracaOd).split(':');
+    const [wh, wm] = String(stan.ustawienia.wieczor).split(':');
+    const dniRegula = stan.ustawienia.weekend ? '' : ';BYDAY=MO,TU,WE,TH,FR';
+    const start = new Date(teraz); start.setHours(+ph, +pm || 0, 0, 0);
+    const wiecz = new Date(teraz); wiecz.setHours(+wh, +wm || 0, 0, 0);
+
+    out.push('BEGIN:VEVENT','UID:rytm-rano@ogarniacz','DTSTAMP:' + icsData(teraz),
+      'DTSTART:' + icsData(start), 'DTEND:' + icsData(new Date(start.getTime() + 600000)),
+      'RRULE:FREQ=DAILY' + dniRegula,
+      'SUMMARY:Ogarniacz — plan dnia',
+      'BEGIN:VALARM','TRIGGER:PT0M','ACTION:DISPLAY','DESCRIPTION:Co masz dzis do zrobienia','END:VALARM',
+      'END:VEVENT');
+
+    out.push('BEGIN:VEVENT','UID:rytm-wieczor@ogarniacz','DTSTAMP:' + icsData(teraz),
+      'DTSTART:' + icsData(wiecz), 'DTEND:' + icsData(new Date(wiecz.getTime() + 600000)),
+      'RRULE:FREQ=DAILY',
+      'SUMMARY:Ogarniacz — co jutro?',
+      'BEGIN:VALARM','TRIGGER:PT0M','ACTION:DISPLAY','DESCRIPTION:Wpisz zadania na jutro','END:VALARM',
+      'END:VEVENT');
+  }
+
   for (const z of lista){
     if (!z.kiedy) continue;
+
+    // okres albo dzien calodniowy -> wydarzenie calodniowe (tez wielodniowe)
+    if (z.doKiedy || !z.maGodzine){
+      const a = new Date(z.kiedy);
+      const b = new Date(z.doKiedy || z.kiedy);
+      b.setDate(b.getDate() + 1);                     // DTEND jest wylaczne
+      out.push('BEGIN:VEVENT');
+      out.push('UID:' + z.id + '@ogarniacz');
+      out.push('DTSTAMP:' + icsData(teraz));
+      out.push('DTSTART;VALUE=DATE:' + icsDzien(a));
+      out.push('DTEND;VALUE=DATE:' + icsDzien(b));
+      out.push('SUMMARY:' + esc_(z.tytul));
+      const [ph2, pm2] = String(stan.ustawienia.pracaOd).split(':');
+      const minutyOdPolnocy = (+ph2) * 60 + (+pm2 || 0);
+      out.push('BEGIN:VALARM','TRIGGER:PT' + minutyOdPolnocy + 'M','ACTION:DISPLAY',
+               'DESCRIPTION:' + esc_(z.tytul),'END:VALARM');
+      out.push('END:VEVENT');
+      continue;
+    }
+
     const start = new Date(z.kiedy);
     const koniec = new Date(start.getTime() + (z.trwanie || 30)*60000);
     out.push('BEGIN:VEVENT');
@@ -1132,8 +1248,22 @@ $('#btnSlowo').onclick = () => {
 };
 $('#inpSlowo').addEventListener('keydown', e => { if (e.key === 'Enter') $('#btnSlowo').click(); });
 
+['inpPracaOd','inpPracaDo','inpWieczor'].forEach((id, i) => {
+  const pole = ['pracaOd','pracaDo','wieczor'][i];
+  $('#' + id).addEventListener('change', e => {
+    if (e.target.value){ stan.ustawienia[pole] = e.target.value; zapisz(); }
+  });
+});
+$('#chkWeekend').addEventListener('change', e => {
+  stan.ustawienia.weekend = e.target.checked; zapisz();
+});
+
 $('#btnUstawienia').onclick = () => {
   rysujSlownik();
+  $('#inpPracaOd').value = stan.ustawienia.pracaOd;
+  $('#inpPracaDo').value = stan.ustawienia.pracaDo;
+  $('#inpWieczor').value = stan.ustawienia.wieczor;
+  $('#chkWeekend').checked = !!stan.ustawienia.weekend;
   $('#selPrzed').value = String(stan.ustawienia.przed);
   $('#selFokus').value = String(stan.ustawienia.fokus);
   $('#btnPowiadomienia').textContent =
@@ -1151,8 +1281,8 @@ $('#btnPowiadomienia').onclick = async () => {
 };
 $('#btnIcsWszystko').onclick = () => {
   const lista = stan.zadania.filter(z => !z.zrobione && z.kiedy);
-  if (!lista.length){ toast('Brak zadań z terminem'); return; }
-  pobierz('ogarniacz.ics', zrobIcs(lista), 'text/calendar;charset=utf-8');
+  pobierz('ogarniacz.ics', zrobIcs(lista, true), 'text/calendar;charset=utf-8');
+  toast('Otwórz pobrany plik — wpadnie do Kalendarza');
 };
 $('#btnEksport').onclick = () => pobierz('ogarniacz-kopia.json', JSON.stringify(stan,null,2), 'application/json');
 $('#inpImport').onchange = e => {
