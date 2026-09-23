@@ -1272,6 +1272,19 @@ $('#btnUstawienia').onclick = () => {
   $('#btnPush').textContent = stan.ustawienia.push ? 'Włączone ✓' : 'Włącz';
   $('#modal').classList.remove('ukryty');
 };
+$('#btnProbne').onclick = probnePowiadomienie;
+
+$('#btnDiagnoza').onclick = async () => {
+  const el = $('#diagnoza');
+  el.innerHTML = '<div class="diagWiersz">sprawdzam…</div>';
+  el.classList.remove('ukryty');
+  const lista = await diagnoza();
+  el.innerHTML = lista.map(([a,b]) =>
+    '<div class="diagWiersz"><span>' + a + '</span><b class="' +
+    (/BRAK|NIE|denied|nieosiągalny|błąd|brak API/.test(b) ? 'zle' : 'ok') + '">' + esc(b) + '</b></div>'
+  ).join('');
+};
+
 $('#btnZamknij').onclick = () => $('#modal').classList.add('ukryty');
 $('#selPrzed').onchange = e => { stan.ustawienia.przed = +e.target.value; zapisz(); };
 $('#selFokus').onchange = e => { stan.ustawienia.fokus = +e.target.value; zapisz(); };

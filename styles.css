@@ -447,3 +447,13 @@ textarea.edycjaNotki{
 }
 .przelacznik{width:24px;height:24px;accent-color:var(--akcent)}
 .wiersz small{color:var(--przygas);font-size:12px}
+
+/* ---------- diagnoza powiadomien ---------- */
+.diagnoza{
+  background:var(--karta2);border-radius:13px;padding:10px 14px;margin-bottom:8px;
+  font-size:14px;
+}
+.diagWiersz{display:flex;justify-content:space-between;gap:12px;padding:5px 0}
+.diagWiersz span{color:var(--przygas)}
+.diagWiersz b.ok{color:var(--akcent)}
+.diagWiersz b.zle{color:var(--wisi)}

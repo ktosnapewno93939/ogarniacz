@@ -22,44 +22,100 @@ async function subskrypcja(){
   return await reg.pushManager.getSubscription();
 }
 
+/* Kazdy krok raportuje glosno — ciche catch() sprawia, ze nie wiadomo,
+   na czym to sie wywala, a bez tego nie da sie tego naprawic. */
+let ostatniBlad = '';
+
+function czyZEkranu(){
+  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+}
+
 async function wlaczPush(){
-  if (!pushDostepny()){
-    toast('Ta przeglądarka nie obsługuje powiadomień');
-    return false;
-  }
-  if (PUSH_SERWER.startsWith('PODMIEN')){
-    toast('Serwer powiadomień nie jest jeszcze ustawiony');
-    return false;
-  }
-
-  const zgoda = await Notification.requestPermission();
-  if (zgoda !== 'granted'){
-    toast('Bez zgody na powiadomienia się nie da');
-    return false;
-  }
-
-  const reg = await navigator.serviceWorker.ready;
-  let sub = await reg.pushManager.getSubscription();
-  if (!sub){
-    sub = await reg.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: kluczDoBajtow(VAPID_PUBLIC)
-    });
-  }
-
-  stan.ustawienia.push = true;
-  zapisz();
-  await wyslijPlan();
-
-  // proba, zeby od razu bylo widac, ze dziala
+  ostatniBlad = '';
   try{
-    await fetch(PUSH_SERWER + '/proba', {
+    if (!('serviceWorker' in navigator)) throw new Error('brak service workera');
+    if (!('Notification' in window)) throw new Error('brak Notification API');
+    if (!('PushManager' in window)){
+      throw new Error(czyZEkranu()
+        ? 'brak PushManager — potrzebny iOS 16.4 lub nowszy'
+        : 'otwórz apkę z ikony na ekranie początkowym, nie z karty Safari');
+    }
+
+    const zgoda = await Notification.requestPermission();
+    if (zgoda !== 'granted') throw new Error('odmowa zgody (' + zgoda + ')');
+
+    const reg = await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub){
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: kluczDoBajtow(VAPID_PUBLIC)
+      });
+    }
+    if (!sub) throw new Error('nie udało się utworzyć subskrypcji');
+
+    stan.ustawienia.push = true;
+    zapisz();
+
+    const odp = await fetch(PUSH_SERWER + '/zapisz', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sub, plan: zbudujPlan() })
+    });
+    if (!odp.ok) throw new Error('serwer odrzucił zapis (' + odp.status + ')');
+
+    const proba = await fetch(PUSH_SERWER + '/proba', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ sub })
     });
-  }catch(e){}
-  return true;
+    const wynik = await proba.json().catch(() => ({}));
+    if (!wynik.ok) throw new Error('serwer nie wysłał próbnego (' + (wynik.status || '?') + ')');
+
+    return true;
+  }catch(e){
+    ostatniBlad = String(e && e.message ? e.message : e);
+    stan.ustawienia.push = false;
+    zapisz();
+    toast('Nie wyszło: ' + ostatniBlad);
+    return false;
+  }
+}
+
+/* Osobny przycisk — wysyla probne do juz zapisanej subskrypcji. */
+async function probnePowiadomienie(){
+  const sub = await subskrypcja();
+  if (!sub){ toast('Najpierw włącz przypomnienia'); return; }
+  try{
+    const odp = await fetch(PUSH_SERWER + '/proba', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sub })
+    });
+    const w = await odp.json().catch(() => ({}));
+    toast(w.ok ? 'Wysłane — czekaj chwilę' : 'Serwer odmówił (' + (w.status || '?') + ')');
+  }catch(e){
+    toast('Brak łączności z serwerem');
+  }
+}
+
+/* Co apka o sobie wie — zeby nie zgadywac, gdzie lezy problem. */
+async function diagnoza(){
+  const l = [];
+  l.push(['z ekranu początkowego', czyZEkranu() ? 'tak' : 'NIE — otwórz z ikony']);
+  l.push(['service worker', ('serviceWorker' in navigator) ? 'jest' : 'BRAK']);
+  l.push(['PushManager', ('PushManager' in window) ? 'jest' : 'BRAK']);
+  l.push(['zgoda', ('Notification' in window) ? Notification.permission : 'brak API']);
+  let sub = null;
+  try { sub = await subskrypcja(); } catch(e){}
+  l.push(['subskrypcja', sub ? 'jest' : 'brak']);
+  l.push(['zaplanowanych', String(zbudujPlan().length)]);
+  try{
+    const o = await fetch(PUSH_SERWER + '/', { cache: 'no-store' });
+    l.push(['serwer', o.ok ? 'odpowiada' : 'błąd ' + o.status]);
+  }catch(e){ l.push(['serwer', 'nieosiągalny']); }
+  if (ostatniBlad) l.push(['ostatni błąd', ostatniBlad]);
+  return l;
 }
 
 async function wylaczPush(){
